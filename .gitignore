@@ -1,0 +1,30 @@
+# dependencies
+/node_modules
+
+# Next.js
+/.next
+/out
+
+# local environment (the example file is intentionally tracked)
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# generated local uploads
+/public/uploads/*
+!/public/uploads/.gitkeep
+
+# test and tooling output
+/coverage
+*.tsbuildinfo
+
+# logs and OS files
+*.log
+.DS_Store
+
+# local database volumes
+/.postgres-data
+
+# graphify's intermediate/cache files; reports remain available locally
+/graphify-out/

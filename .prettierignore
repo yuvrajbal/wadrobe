@@ -1,0 +1,6 @@
+.next
+coverage
+graphify-out
+node_modules
+package-lock.json
+wadrobe_project_spec.md
