@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
 
 export const MAX_IMAGE_SIZE_BYTES = 10 * 1024 * 1024;
@@ -10,7 +10,17 @@ const extensionsByMimeType = {
   "image/webp": "webp",
 } as const;
 
-type SupportedMimeType = keyof typeof extensionsByMimeType;
+export type SupportedMimeType = keyof typeof extensionsByMimeType;
+
+export type StoredImage = {
+  fileName: string;
+  size: number;
+  type: SupportedMimeType;
+  url: string;
+};
+
+const storedImageNamePattern =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.(jpg|png|webp)$/i;
 
 export class UploadValidationError extends Error {
   constructor(
@@ -78,12 +88,7 @@ export async function validateImageFile(
   return mimeType;
 }
 
-export async function storeImage(file: File): Promise<{
-  fileName: string;
-  size: number;
-  type: SupportedMimeType;
-  url: string;
-}> {
+export async function storeImage(file: File): Promise<StoredImage> {
   const type = await validateImageFile(file);
   const fileName = `${randomUUID()}.${extensionsByMimeType[type]}`;
   const uploadDirectory = path.join(process.cwd(), "public", "uploads");
@@ -100,4 +105,20 @@ export async function storeImage(file: File): Promise<{
     type,
     url: `/uploads/${fileName}`,
   };
+}
+
+export async function deleteStoredImage(fileName: string): Promise<void> {
+  if (!storedImageNamePattern.test(fileName)) {
+    throw new Error("Refusing to delete an invalid stored image name.");
+  }
+
+  const destination = path.join(process.cwd(), "public", "uploads", fileName);
+
+  try {
+    await unlink(destination);
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== "ENOENT") {
+      throw error;
+    }
+  }
 }

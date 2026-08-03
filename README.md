@@ -1,8 +1,8 @@
 # Wadrobe
 
-Phase 0 of a phone-first AI wardrobe recommendation app. The repository now
-contains the web application shell, Postgres schema, server-only OpenAI client,
-and local image storage endpoint.
+Phase 1 of a phone-first AI wardrobe recommendation app. The repository contains
+the web application shell, Postgres schema, server-only OpenAI client, local
+image storage, and AI-assisted wardrobe item ingestion.
 
 ## Requirements
 
@@ -24,6 +24,18 @@ npm run dev
 The app runs at `http://localhost:3000`. `GET /api/health` verifies the database
 connection.
 
+## User identity
+
+The MVP is intentionally single-user. Server-side code obtains the current user
+ID from `getCurrentUserId()` in `src/lib/current-user.ts`; do not copy its UUID
+into route handlers or database queries. This keeps user scoping consistent and
+provides one replacement point when authentication is introduced.
+
+When authentication is added, replace the helper's fixed UUID with the user ID
+from the authenticated server session. Existing item and outfit rows can then be
+assigned to the first real account in a data migration before the fixed identity
+is removed.
+
 ## Image uploads
 
 `POST /api/uploads` accepts multipart form data in a field named `file`. It
@@ -37,6 +49,21 @@ curl -F "file=@./shirt.png" http://localhost:3000/api/uploads
 Local-disk storage is intentionally an MVP adapter. Replace it with durable
 object storage before deploying across multiple or ephemeral application
 instances.
+
+## Wardrobe item ingestion
+
+`POST /api/items` accepts the same multipart `file` field, stores the validated
+image, analyzes it once with OpenAI vision, validates the structured attributes,
+and persists the item for the single MVP user. The stored image is removed if
+analysis or database persistence fails.
+
+```bash
+curl -F "file=@./shirt.png" http://localhost:3000/api/items
+```
+
+The vision response is an editable draft containing a name, category, colors,
+pattern, formality, seasons, material, and fit. The request uses Structured
+Outputs and does not store the model response at OpenAI.
 
 ## Useful commands
 
