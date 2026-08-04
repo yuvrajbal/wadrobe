@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const routeMocks = vi.hoisted(() => ({
   getCurrentUserId: vi.fn(),
   ingestWardrobeItem: vi.fn(),
+  listWardrobeItems: vi.fn(),
 }));
 
 vi.mock("server-only", () => ({}));
@@ -12,8 +13,11 @@ vi.mock("@/lib/current-user", () => ({
 vi.mock("@/lib/item-ingestion", () => ({
   ingestWardrobeItem: routeMocks.ingestWardrobeItem,
 }));
+vi.mock("@/lib/wardrobe-items", () => ({
+  listWardrobeItems: routeMocks.listWardrobeItems,
+}));
 
-import { POST } from "@/app/api/items/route";
+import { GET, POST } from "@/app/api/items/route";
 import { WardrobeVisionError } from "@/lib/wardrobe-vision";
 
 const userId = "00000000-0000-4000-8000-000000000001";
@@ -82,5 +86,35 @@ describe("POST /api/items", () => {
     await expect(response.json()).resolves.toEqual({
       error: "The image could not be analyzed. Please try another photo.",
     });
+  });
+});
+
+describe("GET /api/items", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    routeMocks.getCurrentUserId.mockReturnValue(userId);
+    routeMocks.listWardrobeItems.mockResolvedValue([item]);
+  });
+
+  it("lists current-user items with parsed filters", async () => {
+    const response = await GET(
+      new Request("http://localhost/api/items?category=top&available=false"),
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({ items: [item] });
+    expect(routeMocks.listWardrobeItems).toHaveBeenCalledWith(userId, {
+      category: "top",
+      available: false,
+    });
+  });
+
+  it("rejects invalid filters before querying the database", async () => {
+    const response = await GET(
+      new Request("http://localhost/api/items?available=sometimes"),
+    );
+
+    expect(response.status).toBe(400);
+    expect(routeMocks.listWardrobeItems).not.toHaveBeenCalled();
   });
 });

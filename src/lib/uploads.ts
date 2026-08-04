@@ -22,6 +22,17 @@ export type StoredImage = {
 const storedImageNamePattern =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.(jpg|png|webp)$/i;
 
+export function getStoredImageFileName(imageUrl: string): string | null {
+  const uploadsPrefix = "/uploads/";
+
+  if (!imageUrl.startsWith(uploadsPrefix)) {
+    return null;
+  }
+
+  const fileName = imageUrl.slice(uploadsPrefix.length);
+  return storedImageNamePattern.test(fileName) ? fileName : null;
+}
+
 export class UploadValidationError extends Error {
   constructor(
     message: string,

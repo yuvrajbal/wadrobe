@@ -65,6 +65,19 @@ The vision response is an editable draft containing a name, category, colors,
 pattern, formality, seasons, material, and fit. The request uses Structured
 Outputs and does not store the model response at OpenAI.
 
+## Wardrobe item management
+
+- `GET /api/items` lists the current user's items. Optional filters are
+  `category=top|bottom|shoes|outerwear|accessory` and
+  `available=true|false`.
+- `PATCH /api/items/:id` accepts any non-empty subset of the editable item
+  fields: name, category, colors, pattern, formality, season, material, fit,
+  notes, and availability.
+- `DELETE /api/items/:id` deletes an owned item and cleans up its local image.
+
+Every operation is scoped server-side to `getCurrentUserId()`; clients cannot
+select or change a user ID.
+
 ## Useful commands
 
 ```bash

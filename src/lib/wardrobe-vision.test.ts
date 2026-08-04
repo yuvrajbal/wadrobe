@@ -50,7 +50,7 @@ describe("analyzeWardrobeItem", () => {
     expect(openAIMocks.parse).toHaveBeenCalledOnce();
     expect(openAIMocks.parse).toHaveBeenCalledWith(
       expect.objectContaining({
-        model: "gpt-5.6",
+        model: "gpt-5.6-luna",
         store: false,
         input: expect.arrayContaining([
           expect.objectContaining({

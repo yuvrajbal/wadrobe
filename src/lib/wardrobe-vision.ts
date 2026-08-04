@@ -1,27 +1,13 @@
 import "server-only";
 
 import { zodTextFormat } from "openai/helpers/zod";
-import { z } from "zod";
 
+import {
+  wardrobeItemAttributesSchema,
+  type WardrobeItemAttributes,
+} from "@/lib/item-schema";
 import { getOpenAIClient } from "@/lib/openai";
 import type { SupportedMimeType } from "@/lib/uploads";
-
-const seasons = ["spring", "summer", "fall", "winter"] as const;
-
-export const wardrobeItemAttributesSchema = z.object({
-  name: z.string().trim().min(1).max(160),
-  category: z.enum(["top", "bottom", "shoes", "outerwear", "accessory"]),
-  colors: z.array(z.string().trim().min(1).max(40)).min(1).max(5),
-  pattern: z.string().trim().min(1).max(80),
-  formality: z.number().int().min(1).max(5),
-  season: z.array(z.enum(seasons)).min(1).max(seasons.length),
-  material: z.string().trim().min(1).max(120).nullable(),
-  fit: z.string().trim().min(1).max(80).nullable(),
-});
-
-export type WardrobeItemAttributes = z.infer<
-  typeof wardrobeItemAttributesSchema
->;
 
 export class WardrobeVisionError extends Error {
   constructor(message: string, options?: ErrorOptions) {
@@ -38,7 +24,7 @@ export async function analyzeWardrobeItem(
 
   try {
     const response = await getOpenAIClient().responses.parse({
-      model: "gpt-5.6",
+      model: "gpt-5.6-luna",
       store: false,
       input: [
         {

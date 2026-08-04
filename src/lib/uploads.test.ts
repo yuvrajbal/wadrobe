@@ -1,10 +1,23 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  getStoredImageFileName,
   MAX_IMAGE_SIZE_BYTES,
   UploadValidationError,
   validateImageFile,
 } from "@/lib/uploads";
+
+describe("getStoredImageFileName", () => {
+  it("extracts only generated local upload names", () => {
+    expect(
+      getStoredImageFileName(
+        "/uploads/123e4567-e89b-42d3-a456-426614174000.jpg",
+      ),
+    ).toBe("123e4567-e89b-42d3-a456-426614174000.jpg");
+    expect(getStoredImageFileName("https://example.com/shirt.jpg")).toBeNull();
+    expect(getStoredImageFileName("/uploads/../private.txt")).toBeNull();
+  });
+});
 
 describe("validateImageFile", () => {
   it("accepts a PNG with a matching signature", async () => {
