@@ -25,4 +25,19 @@ body {
     var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+  text-rendering: optimizeLegibility;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+button,
+label,
+select,
+input[type="checkbox"] {
+  -webkit-tap-highlight-color: transparent;
 }
