@@ -1,15 +1,15 @@
 # Wadrobe
 
-Phase 1 of a phone-first AI wardrobe recommendation app. The repository contains
-the web application shell, Postgres schema, server-only OpenAI client, local
-image storage, and AI-assisted wardrobe item ingestion.
+Phase 2 of a phone-first AI wardrobe recommendation app. Phase 1 (wardrobe
+ingestion and management) is complete. The app now also includes a manual outfit
+builder, user-scoped outfit persistence, structured AI critique, saved-outfit
+viewing, and responsive primary navigation.
 
 ## Requirements
 
 - Node.js 20.9 or newer
 - Docker with Compose (for the local Postgres instance)
-- An OpenAI API key (needed from Phase 1 onward; the Phase 0 build does not call
-  the API)
+- An OpenAI API key (used for garment ingestion and outfit critique)
 
 ## Local setup
 
@@ -77,6 +77,42 @@ Outputs and does not store the model response at OpenAI.
 
 Every operation is scoped server-side to `getCurrentUserId()`; clients cannot
 select or change a user ID.
+
+## Manual outfit builder
+
+Open `/builder` to assemble an outfit from available wardrobe items. The builder
+provides required slots for a top, bottom, and shoes, plus optional outerwear and
+accessory slots. Each picker is filtered to the slot category; selected pieces
+can be replaced or removed individually.
+
+- `POST /api/outfits` validates and saves a manual outfit. `source` is always
+  `manual` and `status` is always `saved`; clients cannot override either field.
+- `GET /api/outfits` lists current-user outfits and accepts optional `status` and
+  `source` filters.
+- `PATCH /api/outfits/:id` updates an owned outfit and
+  `DELETE /api/outfits/:id` deletes one.
+
+All outfit writes verify that every referenced item exists, belongs to the
+current user, is available, and forms a valid combination. A valid manual outfit
+has exactly one top, bottom, and pair of shoes, with at most one outerwear and
+one accessory item.
+
+## Outfit critique
+
+`POST /api/outfits/critique` validates the same outfit rules before asking the
+model for a short structured assessment. The model receives compact item
+attributes (category, colors, pattern, formality, seasons, material, and fit),
+never item images, URLs, names, or notes. Malformed structured responses are
+retried once before the endpoint returns a stable error.
+
+## Current milestone status
+
+- Phase 0 — setup: complete
+- Phase 1 — wardrobe: complete (merged in PR #1)
+- Phase 2 — manual outfit builder: complete
+- Phase 3 — context-aware suggestions: planned
+- Phase 4 — saved-outfit personalization: planned (basic saved gallery exists)
+- Phase 5 — polish: planned
 
 ## Useful commands
 

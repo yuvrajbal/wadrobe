@@ -228,26 +228,7 @@ export function WardrobeApp() {
   const availableCount = items.filter((item) => item.available).length;
 
   return (
-    <main className="min-h-screen pb-20">
-      <header className="border-b border-emerald-950/10 bg-[#f7f5ef]/90 backdrop-blur-xl">
-        <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-5 py-4 sm:px-8">
-          <div className="flex items-center gap-3">
-            <div className="grid h-9 w-9 place-items-center rounded-xl bg-emerald-950 text-sm font-semibold text-[#f7f5ef]">
-              W
-            </div>
-            <div>
-              <p className="font-semibold tracking-[-0.02em]">wadrobe</p>
-              <p className="text-xs text-emerald-950/50">
-                Your closet, considered
-              </p>
-            </div>
-          </div>
-          <span className="rounded-full border border-emerald-950/10 bg-white/60 px-3 py-1.5 text-xs font-medium text-emerald-900">
-            Wardrobe
-          </span>
-        </div>
-      </header>
-
+    <main className="min-h-screen pb-28 md:pb-20">
       <div className="mx-auto w-full max-w-7xl px-5 pt-10 sm:px-8 sm:pt-14">
         <section className="flex flex-col gap-7 border-b border-emerald-950/10 pb-10 sm:flex-row sm:items-end sm:justify-between">
           <div>
