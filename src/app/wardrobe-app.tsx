@@ -6,6 +6,7 @@ import {
   type FormEvent,
   useCallback,
   useEffect,
+  useRef,
   useState,
 } from "react";
 
@@ -88,11 +89,16 @@ export function WardrobeApp() {
     "loading",
   );
   const [loadError, setLoadError] = useState("");
-  const [pendingFile, setPendingFile] = useState<File | null>(null);
-  const [previewUrl, setPreviewUrl] = useState("");
+  const [pendingUpload, setPendingUpload] = useState<{
+    file: File;
+    previewUrl: string;
+  } | null>(null);
+  const previewUrlRef = useRef<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState("");
   const [selectedItem, setSelectedItem] = useState<WardrobeItem | null>(null);
+  const pendingFile = pendingUpload?.file ?? null;
+  const previewUrl = pendingUpload?.previewUrl ?? "";
 
   const loadItems = useCallback(async (category: ItemCategory) => {
     setLoadState("loading");
@@ -123,27 +129,38 @@ export function WardrobeApp() {
   }, []);
 
   useEffect(() => {
-    void loadItems(activeCategory);
+    const timer = window.setTimeout(() => {
+      void loadItems(activeCategory);
+    }, 0);
+
+    return () => window.clearTimeout(timer);
   }, [activeCategory, loadItems]);
 
   useEffect(() => {
-    if (!pendingFile) {
-      setPreviewUrl("");
-      return;
-    }
+    return () => {
+      if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
+    };
+  }, []);
 
-    const url = URL.createObjectURL(pendingFile);
-    setPreviewUrl(url);
-    return () => URL.revokeObjectURL(url);
-  }, [pendingFile]);
+  function clearPendingUpload() {
+    if (previewUrlRef.current) {
+      URL.revokeObjectURL(previewUrlRef.current);
+      previewUrlRef.current = null;
+    }
+    setPendingUpload(null);
+  }
 
   function chooseFile(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     event.target.value = "";
 
     if (file) {
+      if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
+
+      const preview = URL.createObjectURL(file);
+      previewUrlRef.current = preview;
       setUploadError("");
-      setPendingFile(file);
+      setPendingUpload({ file, previewUrl: preview });
     }
   }
 
@@ -167,8 +184,20 @@ export function WardrobeApp() {
         );
       }
 
-      setPendingFile(null);
-      await loadItems(activeCategory);
+      const body = (await response.json()) as { item: WardrobeItem };
+      const createdItem = body.item;
+
+      if (!createdItem?.id) {
+        throw new Error(
+          "The garment was analyzed, but its wardrobe details were incomplete. Please try again.",
+        );
+      }
+
+      if (activeCategory === "all" || createdItem.category === activeCategory) {
+        setItems((current) => [createdItem, ...current]);
+      }
+
+      clearPendingUpload();
     } catch (error) {
       setUploadError(
         error instanceof Error
@@ -313,7 +342,7 @@ export function WardrobeApp() {
           isUploading={isUploading}
           error={uploadError}
           onCancel={() => {
-            if (!isUploading) setPendingFile(null);
+            if (!isUploading) clearPendingUpload();
           }}
           onUpload={() => void uploadItem()}
         />
