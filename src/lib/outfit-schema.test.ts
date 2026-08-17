@@ -3,7 +3,9 @@ import { describe, expect, it } from "vitest";
 import {
   outfitCreateSchema,
   outfitCritiqueSchema,
+  outfitFeedbackSchema,
   outfitUpdateSchema,
+  recommendationRequestSchema,
 } from "@/lib/outfit-schema";
 
 const ids = [
@@ -53,6 +55,41 @@ describe("outfit payload schemas", () => {
         summary: "Fine",
         strengths: [],
         suggestion: null,
+      }).success,
+    ).toBe(false);
+  });
+
+  it("validates recommendation context and AI feedback decisions", () => {
+    const context = {
+      occasion: "work dinner",
+      temperature: 68,
+      temperatureUnit: "fahrenheit",
+      walkingLevel: "moderate",
+      style: "relaxed tailoring",
+    };
+
+    expect(recommendationRequestSchema.safeParse({ context }).success).toBe(
+      true,
+    );
+    expect(
+      outfitFeedbackSchema.safeParse({
+        itemIds: ids,
+        context,
+        status: "rejected",
+      }).success,
+    ).toBe(true);
+    expect(
+      outfitFeedbackSchema.safeParse({
+        itemIds: ids,
+        context,
+        status: "suggested",
+      }).success,
+    ).toBe(false);
+    expect(
+      outfitFeedbackSchema.safeParse({
+        itemIds: ids,
+        context: { occasion: "work dinner" },
+        status: "saved",
       }).success,
     ).toBe(false);
   });

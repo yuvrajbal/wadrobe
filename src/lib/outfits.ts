@@ -6,6 +6,7 @@ import { getDatabase } from "@/lib/db";
 import { items, outfits, type Item, type Outfit } from "@/lib/db/schema";
 import type {
   OutfitCreate,
+  OutfitFeedback,
   OutfitListFilters,
   OutfitUpdate,
 } from "@/lib/outfit-schema";
@@ -103,6 +104,26 @@ export async function createOutfit(
   return outfit;
 }
 
+export async function createAiOutfitFeedback(
+  userId: string,
+  payload: OutfitFeedback,
+): Promise<Outfit> {
+  await getValidOutfitItems(userId, payload.itemIds);
+
+  const [outfit] = await getDatabase()
+    .insert(outfits)
+    .values({
+      userId,
+      itemIds: payload.itemIds,
+      context: payload.context,
+      source: "ai",
+      status: payload.status,
+    })
+    .returning();
+
+  return outfit;
+}
+
 export async function listOutfits(
   userId: string,
   filters: OutfitListFilters = {},
@@ -117,6 +138,23 @@ export async function listOutfits(
     .from(outfits)
     .where(and(...conditions))
     .orderBy(desc(outfits.createdAt));
+}
+
+export async function listRecentOutfitFeedback(
+  userId: string,
+  limit = 12,
+): Promise<Outfit[]> {
+  return getDatabase()
+    .select()
+    .from(outfits)
+    .where(
+      and(
+        eq(outfits.userId, userId),
+        inArray(outfits.status, ["saved", "rejected"]),
+      ),
+    )
+    .orderBy(desc(outfits.createdAt))
+    .limit(limit);
 }
 
 export async function updateOutfit(

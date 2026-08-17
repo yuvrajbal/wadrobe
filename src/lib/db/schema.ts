@@ -32,6 +32,7 @@ export const outfitSource = pgEnum("outfit_source", ["manual", "ai"]);
 export type OutfitContext = {
   occasion?: string;
   temperature?: number;
+  temperatureUnit?: "fahrenheit" | "celsius";
   walkingLevel?: string;
   style?: string;
 };

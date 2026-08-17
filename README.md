@@ -1,15 +1,15 @@
 # Wadrobe
 
-Phase 2 of a phone-first AI wardrobe recommendation app. Phase 1 (wardrobe
-ingestion and management) is complete. The app now also includes a manual outfit
-builder, user-scoped outfit persistence, structured AI critique, saved-outfit
-viewing, and responsive primary navigation.
+Phase 3 of a phone-first AI wardrobe recommendation app. Wardrobe ingestion,
+manual outfit building, structured critique, and context-aware outfit
+recommendations are complete. Recommendations account for occasion, current or
+manual weather, walking level, style direction, and recent save/reject feedback.
 
 ## Requirements
 
 - Node.js 20.9 or newer
 - Docker with Compose (for the local Postgres instance)
-- An OpenAI API key (used for garment ingestion and outfit critique)
+- An OpenAI API key (used for garment ingestion, critique, and recommendations)
 
 ## Local setup
 
@@ -105,12 +105,35 @@ attributes (category, colors, pattern, formality, seasons, material, and fit),
 never item images, URLs, names, or notes. Malformed structured responses are
 retried once before the endpoint returns a stable error.
 
+## Context-aware suggestions
+
+Open `/suggestions` and provide an occasion, temperature, walking level, and
+style direction. Temperature can be entered manually or filled from browser
+geolocation through the server-side Open-Meteo adapter.
+
+`POST /api/suggestions` loads only the current user's available wardrobe items
+and a bounded set of recent saved/rejected outfits. The model receives compact
+item attributes and feedback IDs—never images, image URLs, names, notes, or user
+IDs. Its structured response is validated for known item IDs, required category
+coverage, availability, distinct combinations, and a maximum of three looks.
+Malformed or invalid responses are retried once.
+
+Each suggestion can be:
+
+- saved or rejected through `POST /api/outfits/feedback`; these decisions are
+  stored as `source: ai` for future recommendation context;
+- opened in `/builder` with its available pieces preselected for manual edits.
+
+`GET /api/weather` validates browser coordinates and proxies only the current
+temperature from Open-Meteo. Weather failure never blocks suggestions because
+the temperature field remains manually editable.
+
 ## Current milestone status
 
 - Phase 0 — setup: complete
 - Phase 1 — wardrobe: complete (merged in PR #1)
 - Phase 2 — manual outfit builder: complete
-- Phase 3 — context-aware suggestions: planned
+- Phase 3 — context-aware suggestions: complete
 - Phase 4 — saved-outfit personalization: planned (basic saved gallery exists)
 - Phase 5 — polish: planned
 

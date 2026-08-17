@@ -64,7 +64,11 @@ async function responseError(response: Response, fallback: string) {
   return body?.error ?? fallback;
 }
 
-export function OutfitBuilder() {
+export function OutfitBuilder({
+  initialItemIds = [],
+}: {
+  initialItemIds?: string[];
+}) {
   const [items, setItems] = useState<WardrobeItem[]>([]);
   const [loadState, setLoadState] = useState<"loading" | "ready" | "error">(
     "loading",
@@ -94,6 +98,17 @@ export function OutfitBuilder() {
       }
       const body = (await response.json()) as { items: WardrobeItem[] };
       setItems(body.items);
+      if (initialItemIds.length > 0) {
+        const requestedIds = new Set(initialItemIds);
+        setSelection((current) => {
+          if (Object.keys(current).length > 0) return current;
+          return Object.fromEntries(
+            body.items
+              .filter((item) => requestedIds.has(item.id))
+              .map((item) => [item.category, item.id]),
+          );
+        });
+      }
       setLoadState("ready");
     } catch (error) {
       setLoadError(
@@ -103,7 +118,7 @@ export function OutfitBuilder() {
       );
       setLoadState("error");
     }
-  }, []);
+  }, [initialItemIds]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {

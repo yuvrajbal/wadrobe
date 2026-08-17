@@ -7,6 +7,7 @@ const dbMocks = vi.hoisted(() => ({
   insert: vi.fn(),
   insertReturning: vi.fn(),
   insertValues: vi.fn(),
+  listLimit: vi.fn(),
   listOrderBy: vi.fn(),
   select: vi.fn(),
   selectFrom: vi.fn(),
@@ -30,9 +31,11 @@ vi.mock("@/lib/db", () => ({
 
 import {
   createOutfit,
+  createAiOutfitFeedback,
   deleteOutfit,
   getValidOutfitItems,
   listOutfits,
+  listRecentOutfitFeedback,
   updateOutfit,
 } from "@/lib/outfits";
 
@@ -117,6 +120,32 @@ describe("outfit domain", () => {
     });
   });
 
+  it("persists AI save or reject feedback with its request context", async () => {
+    dbMocks.selectWhere.mockResolvedValueOnce(validItems);
+    const context = {
+      occasion: "dinner",
+      temperature: 68,
+      temperatureUnit: "fahrenheit" as const,
+      walkingLevel: "moderate" as const,
+      style: "minimal",
+    };
+
+    await expect(
+      createAiOutfitFeedback(userId, {
+        itemIds,
+        context,
+        status: "rejected",
+      }),
+    ).resolves.toEqual(outfit);
+    expect(dbMocks.insertValues).toHaveBeenCalledWith({
+      userId,
+      itemIds,
+      context,
+      source: "ai",
+      status: "rejected",
+    });
+  });
+
   it("rejects an item owned by another user", async () => {
     dbMocks.selectWhere.mockResolvedValueOnce([
       validItems[0],
@@ -175,5 +204,16 @@ describe("outfit domain", () => {
     });
 
     await expect(deleteOutfit(outfit.id, userId)).resolves.toEqual(outfit);
+  });
+
+  it("bounds recent saved and rejected feedback", async () => {
+    dbMocks.selectWhere.mockReturnValueOnce({ orderBy: dbMocks.listOrderBy });
+    dbMocks.listOrderBy.mockReturnValueOnce({ limit: dbMocks.listLimit });
+    dbMocks.listLimit.mockResolvedValueOnce([outfit]);
+
+    await expect(listRecentOutfitFeedback(userId, 8)).resolves.toEqual([
+      outfit,
+    ]);
+    expect(dbMocks.listLimit).toHaveBeenCalledWith(8);
   });
 });
