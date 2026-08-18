@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 type Category = "top" | "bottom" | "shoes" | "outerwear" | "accessory";
 
@@ -390,7 +390,10 @@ export function OutfitBuilder({
 
               {critique ? <CritiqueCard critique={critique} /> : null}
               {critiqueError ? (
-                <p className="mt-4 rounded-2xl bg-red-950/55 px-4 py-3 text-sm text-red-50">
+                <p
+                  role="alert"
+                  className="mt-4 rounded-2xl bg-red-950/55 px-4 py-3 text-sm text-red-50"
+                >
                   {critiqueError}
                 </p>
               ) : null}
@@ -502,15 +505,42 @@ function ItemPicker({
   onChoose: (item: WardrobeItem) => void;
   onClose: () => void;
 }) {
+  const dialogRef = useRef<HTMLElement>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") onClose();
+      if (event.key === "Escape") {
+        onClose();
+        return;
+      }
+
+      if (event.key !== "Tab" || !dialogRef.current) return;
+      const focusable = Array.from(
+        dialogRef.current.querySelectorAll<HTMLElement>(
+          "button:not([disabled]), a[href]",
+        ),
+      );
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (!first || !last) return;
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
     }
+    const previousFocus = document.activeElement as HTMLElement | null;
+    const previousOverflow = document.body.style.overflow;
     document.addEventListener("keydown", onKeyDown);
     document.body.style.overflow = "hidden";
+    closeButtonRef.current?.focus();
     return () => {
       document.removeEventListener("keydown", onKeyDown);
-      document.body.style.overflow = "";
+      document.body.style.overflow = previousOverflow;
+      previousFocus?.focus();
     };
   }, [onClose]);
 
@@ -523,6 +553,8 @@ function ItemPicker({
       }}
     >
       <section
+        ref={dialogRef}
+        tabIndex={-1}
         role="dialog"
         aria-modal="true"
         aria-label={`Choose ${category}`}
@@ -536,6 +568,7 @@ function ItemPicker({
             <p className="text-xs text-emerald-950/45">Available pieces only</p>
           </div>
           <button
+            ref={closeButtonRef}
             type="button"
             aria-label="Close picker"
             onClick={onClose}
@@ -551,6 +584,7 @@ function ItemPicker({
               <button
                 type="button"
                 key={item.id}
+                aria-pressed={selectedId === item.id}
                 onClick={() => onChoose(item)}
                 className={`overflow-hidden rounded-3xl border bg-white text-left transition hover:-translate-y-0.5 ${
                   selectedId === item.id

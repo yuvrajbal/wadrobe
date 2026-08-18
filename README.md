@@ -141,8 +141,13 @@ the temperature field remains manually editable.
 
 ```bash
 npm run check        # formatting, lint, types, and tests
+npm run test:e2e     # browser-level user journeys (API boundaries are mocked)
 npm run build        # production Next.js build
 npm run db:migrate   # apply pending migrations
 ```
+
+The Playwright suite starts the app on port 3100 and uses deterministic API
+responses, so it does not require Postgres or an OpenAI key. Install Chromium
+once with `npm run test:e2e:install` before running it locally.
 
 Only server modules read `OPENAI_API_KEY`; never create a `NEXT_PUBLIC_` variant.
