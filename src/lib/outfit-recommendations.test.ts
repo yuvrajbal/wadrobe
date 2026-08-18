@@ -63,6 +63,20 @@ const validResult = {
     },
   ],
 };
+const personalization = {
+  feedbackCount: 1,
+  savedCount: 1,
+  rejectedCount: 0,
+  mostUsedItemIds: ids.slice(0, 3),
+  preferredItemIds: ids.slice(0, 3),
+  avoidedItemIds: [],
+  preferredColors: ["navy"],
+  avoidedColors: [],
+  preferredFormalityLevels: [3],
+  avoidedFormalityLevels: [],
+  preferredStyles: ["relaxed tailoring"],
+  avoidedStyles: [],
+};
 
 describe("recommendOutfits", () => {
   beforeEach(() => openAIMocks.parse.mockReset());
@@ -71,7 +85,7 @@ describe("recommendOutfits", () => {
     openAIMocks.parse.mockResolvedValue({ output_parsed: validResult });
 
     await expect(
-      recommendOutfits({ items, context, feedback }),
+      recommendOutfits({ items, context, feedback, personalization }),
     ).resolves.toEqual(validResult);
     const request = openAIMocks.parse.mock.calls[0][0];
     expect(request).toMatchObject({
@@ -81,11 +95,14 @@ describe("recommendOutfits", () => {
     });
     const payload = JSON.stringify(request.input);
     expect(payload).toContain("recentFeedback");
+    expect(payload).toContain("personalization");
+    expect(payload).toContain("preferredColors");
     expect(payload).toContain("saved");
     expect(payload).not.toContain("imageUrl");
     expect(payload).not.toContain("private name");
     expect(payload).not.toContain("private notes");
     expect(payload).not.toContain("material");
+    expect(payload).not.toContain(userId);
   });
 
   it("retries a malformed or invalid combination once", async () => {
@@ -103,7 +120,7 @@ describe("recommendOutfits", () => {
       .mockResolvedValueOnce({ output_parsed: validResult });
 
     await expect(
-      recommendOutfits({ items, context, feedback }),
+      recommendOutfits({ items, context, feedback, personalization }),
     ).resolves.toEqual(validResult);
     expect(openAIMocks.parse).toHaveBeenCalledTimes(2);
   });
@@ -112,14 +129,19 @@ describe("recommendOutfits", () => {
     openAIMocks.parse.mockResolvedValue({ output_parsed: null });
 
     await expect(
-      recommendOutfits({ items, context, feedback }),
+      recommendOutfits({ items, context, feedback, personalization }),
     ).rejects.toBeInstanceOf(OutfitRecommendationError);
     expect(openAIMocks.parse).toHaveBeenCalledTimes(2);
   });
 
   it("does not call the model without the core wardrobe categories", async () => {
     await expect(
-      recommendOutfits({ items: items.slice(0, 2), context, feedback }),
+      recommendOutfits({
+        items: items.slice(0, 2),
+        context,
+        feedback,
+        personalization,
+      }),
     ).rejects.toBeInstanceOf(InsufficientWardrobeError);
     expect(openAIMocks.parse).not.toHaveBeenCalled();
   });

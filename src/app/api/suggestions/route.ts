@@ -6,6 +6,7 @@ import {
   OutfitRecommendationError,
   recommendOutfits,
 } from "@/lib/outfit-recommendations";
+import { buildPersonalizationSummary } from "@/lib/outfit-personalization";
 import { recommendationRequestSchema } from "@/lib/outfit-schema";
 import { listRecentOutfitFeedback } from "@/lib/outfits";
 import { listWardrobeItems } from "@/lib/wardrobe-items";
@@ -33,13 +34,19 @@ export async function POST(request: Request) {
 
   try {
     const userId = getCurrentUserId();
-    const [items, feedback] = await Promise.all([
-      listWardrobeItems(userId, { available: true }),
+    const [wardrobeItems, feedback] = await Promise.all([
+      listWardrobeItems(userId, {}),
       listRecentOutfitFeedback(userId),
     ]);
+    const items = wardrobeItems.filter((item) => item.available);
+    const personalization = buildPersonalizationSummary(
+      wardrobeItems,
+      feedback,
+    );
     const result = await recommendOutfits({
       items,
       feedback,
+      personalization,
       context: requestData.data.context,
     });
     return NextResponse.json(result);

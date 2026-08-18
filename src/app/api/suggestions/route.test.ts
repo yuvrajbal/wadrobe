@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const routeMocks = vi.hoisted(() => ({
+  buildPersonalizationSummary: vi.fn(),
   getCurrentUserId: vi.fn(),
   listRecentOutfitFeedback: vi.fn(),
   listWardrobeItems: vi.fn(),
@@ -13,6 +14,9 @@ vi.mock("@/lib/current-user", () => ({
 }));
 vi.mock("@/lib/wardrobe-items", () => ({
   listWardrobeItems: routeMocks.listWardrobeItems,
+}));
+vi.mock("@/lib/outfit-personalization", () => ({
+  buildPersonalizationSummary: routeMocks.buildPersonalizationSummary,
 }));
 vi.mock("@/lib/outfits", () => ({
   listRecentOutfitFeedback: routeMocks.listRecentOutfitFeedback,
@@ -34,6 +38,10 @@ const context = {
   walkingLevel: "moderate",
   style: "relaxed tailoring",
 };
+const personalization = {
+  feedbackCount: 1,
+  preferredColors: ["navy"],
+};
 
 function suggestionRequest(body: unknown) {
   return new Request("http://localhost/api/suggestions", {
@@ -47,24 +55,34 @@ describe("POST /api/suggestions", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     routeMocks.getCurrentUserId.mockReturnValue(userId);
-    routeMocks.listWardrobeItems.mockResolvedValue([{ id: "item" }]);
+    routeMocks.listWardrobeItems.mockResolvedValue([
+      { id: "available-item", available: true },
+      { id: "unavailable-item", available: false },
+    ]);
     routeMocks.listRecentOutfitFeedback.mockResolvedValue([
       { status: "saved" },
     ]);
     routeMocks.recommendOutfits.mockResolvedValue({ suggestions: [] });
+    routeMocks.buildPersonalizationSummary.mockReturnValue(personalization);
   });
 
   it("assembles current-user available items, context, and feedback", async () => {
     const response = await POST(suggestionRequest({ context }));
 
     expect(response.status).toBe(200);
-    expect(routeMocks.listWardrobeItems).toHaveBeenCalledWith(userId, {
-      available: true,
-    });
+    expect(routeMocks.listWardrobeItems).toHaveBeenCalledWith(userId, {});
     expect(routeMocks.listRecentOutfitFeedback).toHaveBeenCalledWith(userId);
+    expect(routeMocks.buildPersonalizationSummary).toHaveBeenCalledWith(
+      [
+        { id: "available-item", available: true },
+        { id: "unavailable-item", available: false },
+      ],
+      [{ status: "saved" }],
+    );
     expect(routeMocks.recommendOutfits).toHaveBeenCalledWith({
-      items: [{ id: "item" }],
+      items: [{ id: "available-item", available: true }],
       feedback: [{ status: "saved" }],
+      personalization,
       context,
     });
   });
