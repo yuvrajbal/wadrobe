@@ -2,7 +2,13 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { type FormEvent, useEffect, useMemo, useState } from "react";
+import {
+  type FormEvent,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 
 type Category = "top" | "bottom" | "shoes" | "outerwear" | "accessory";
 type WardrobeItem = {
@@ -60,26 +66,28 @@ export function OutfitSuggestions() {
     {},
   );
 
+  const loadItems = useCallback(async () => {
+    setItemsState("loading");
+    try {
+      const response = await fetch("/api/items?available=true", {
+        cache: "no-store",
+      });
+      if (!response.ok) throw new Error();
+      const body = (await response.json()) as { items: WardrobeItem[] };
+      setItems(body.items);
+      setItemsState("ready");
+    } catch {
+      setItemsState("error");
+    }
+  }, []);
+
   useEffect(() => {
     const timer = window.setTimeout(() => {
-      async function loadItems() {
-        try {
-          const response = await fetch("/api/items?available=true", {
-            cache: "no-store",
-          });
-          if (!response.ok) throw new Error();
-          const body = (await response.json()) as { items: WardrobeItem[] };
-          setItems(body.items);
-          setItemsState("ready");
-        } catch {
-          setItemsState("error");
-        }
-      }
       void loadItems();
     }, 0);
 
     return () => window.clearTimeout(timer);
-  }, []);
+  }, [loadItems]);
 
   const itemMap = useMemo(
     () => new Map(items.map((item) => [item.id, item])),
@@ -323,6 +331,7 @@ export function OutfitSuggestions() {
                     <button
                       key={level}
                       type="button"
+                      aria-pressed={walkingLevel === level}
                       onClick={() => setWalkingLevel(level)}
                       className={`rounded-2xl px-2 py-3 text-xs font-semibold capitalize transition ${
                         walkingLevel === level
@@ -349,14 +358,21 @@ export function OutfitSuggestions() {
             </div>
 
             {requestError ? (
-              <p className="mt-5 rounded-2xl bg-red-50 px-4 py-3 text-sm leading-5 text-red-900">
+              <p
+                role="alert"
+                className="mt-5 rounded-2xl bg-red-50 px-4 py-3 text-sm leading-5 text-red-900"
+              >
                 {requestError}
               </p>
             ) : null}
 
             <button
               type="submit"
-              disabled={requestState === "loading" || itemsState === "loading"}
+              disabled={
+                requestState === "loading" ||
+                itemsState !== "ready" ||
+                !hasCoreWardrobe
+              }
               className="mt-6 min-h-12 w-full rounded-full bg-emerald-950 px-5 py-3 text-sm font-semibold text-white disabled:cursor-wait disabled:opacity-60"
             >
               {requestState === "loading"
@@ -374,8 +390,15 @@ export function OutfitSuggestions() {
                   Your wardrobe could not be loaded.
                 </h2>
                 <p className="mt-2 text-sm text-red-950/60">
-                  Refresh to try again.
+                  Try again without losing the context you entered.
                 </p>
+                <button
+                  type="button"
+                  onClick={() => void loadItems()}
+                  className="mt-5 rounded-full bg-red-950 px-5 py-2.5 text-sm font-semibold text-white"
+                >
+                  Try again
+                </button>
               </div>
             ) : null}
 

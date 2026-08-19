@@ -17,6 +17,8 @@
 
 # test and tooling output
 /coverage
+/playwright-report
+/test-results
 *.tsbuildinfo
 
 # logs and OS files
