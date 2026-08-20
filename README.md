@@ -113,12 +113,13 @@ geolocation through the server-side Open-Meteo adapter.
 
 `POST /api/suggestions` loads only the current user's available wardrobe items
 and a bounded set of recent saved/rejected outfits. A deterministic, recency-
-weighted summary captures preferred and avoided items, colors, formality levels,
-and styles. The model receives that summary, compact item attributes, and
-feedback IDs—never images, image URLs, names, notes, or user IDs. Its structured
-response is validated for known item IDs, required category coverage,
-availability, distinct combinations, and a maximum of three looks.
-Malformed or invalid responses are retried once.
+and context-weighted summary captures preferred and avoided items, colors,
+patterns, formality levels, and styles. The model receives that summary, compact
+item attributes, and feedback IDs—never images, image URLs, names, notes, or user
+IDs. Its structured response is validated for known item IDs, required category
+coverage, availability, distinct combinations, rejected-look repetition, and a
+maximum of three looks. Malformed or invalid responses are retried once with the
+validation failure included as a correction instruction.
 
 Each suggestion can be:
 

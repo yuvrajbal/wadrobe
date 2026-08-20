@@ -72,6 +72,8 @@ const personalization = {
   avoidedItemIds: [],
   preferredColors: ["navy"],
   avoidedColors: [],
+  preferredPatterns: ["solid"],
+  avoidedPatterns: [],
   preferredFormalityLevels: [3],
   avoidedFormalityLevels: [],
   preferredStyles: ["relaxed tailoring"],
@@ -123,6 +125,46 @@ describe("recommendOutfits", () => {
       recommendOutfits({ items, context, feedback, personalization }),
     ).resolves.toEqual(validResult);
     expect(openAIMocks.parse).toHaveBeenCalledTimes(2);
+    expect(JSON.stringify(openAIMocks.parse.mock.calls[1][0].input)).toContain(
+      "previous response was invalid",
+    );
+  });
+
+  it("rejects an exact disliked outfit when alternatives are available", async () => {
+    const alternativeTop = {
+      ...items[0],
+      id: "55555555-5555-4555-8555-555555555555",
+      colors: ["sage"],
+    };
+    const rejected = {
+      ...feedback[0],
+      status: "rejected" as const,
+      itemIds: ids,
+    };
+    const alternativeResult = {
+      suggestions: [
+        {
+          itemIds: [alternativeTop.id, ids[1], ids[2], ids[3]],
+          rationale: "A practical alternative that avoids the disliked look.",
+        },
+      ],
+    };
+    openAIMocks.parse
+      .mockResolvedValueOnce({ output_parsed: validResult })
+      .mockResolvedValueOnce({ output_parsed: alternativeResult });
+
+    await expect(
+      recommendOutfits({
+        items: [...items, alternativeTop],
+        context,
+        feedback: [rejected],
+        personalization,
+      }),
+    ).resolves.toEqual(alternativeResult);
+    expect(openAIMocks.parse).toHaveBeenCalledTimes(2);
+    expect(JSON.stringify(openAIMocks.parse.mock.calls[1][0].input)).toContain(
+      "exactly repeated a rejected outfit",
+    );
   });
 
   it("fails after two malformed outputs", async () => {

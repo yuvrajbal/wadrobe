@@ -42,6 +42,7 @@ export async function POST(request: Request) {
     const personalization = buildPersonalizationSummary(
       wardrobeItems,
       feedback,
+      requestData.data.context,
     );
     const result = await recommendOutfits({
       items,

@@ -93,6 +93,8 @@ describe("buildPersonalizationSummary", () => {
       avoidedItemIds: [ids[1], ids[2], ids[0]],
       preferredColors: ["cream"],
       avoidedColors: ["black", "navy"],
+      preferredPatterns: [],
+      avoidedPatterns: ["solid"],
       preferredFormalityLevels: [2],
       avoidedFormalityLevels: [4],
       preferredStyles: ["minimal"],
@@ -110,6 +112,8 @@ describe("buildPersonalizationSummary", () => {
       avoidedItemIds: [],
       preferredColors: [],
       avoidedColors: [],
+      preferredPatterns: [],
+      avoidedPatterns: [],
       preferredFormalityLevels: [],
       avoidedFormalityLevels: [],
       preferredStyles: [],
@@ -156,5 +160,37 @@ describe("buildPersonalizationSummary", () => {
     expect(summary.preferredItemIds).not.toContain(ids[0]);
     expect(summary.preferredColors).toContain("navy");
     expect(summary.preferredFormalityLevels).toContain(4);
+  });
+
+  it("gives more weight to feedback that matches the current request", () => {
+    const olderMatchingSave = outfit(
+      "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee",
+      [ids[0], ids[3], ids[4]],
+      "saved",
+      "Relaxed tailoring",
+      "2026-08-01T12:00:00Z",
+    );
+    const recentDifferentSave = outfit(
+      "ffffffff-ffff-4fff-8fff-ffffffffffff",
+      [ids[0], ids[1], ids[2]],
+      "saved",
+      "Bold",
+      "2026-08-02T12:00:00Z",
+    );
+
+    const summary = buildPersonalizationSummary(
+      wardrobe,
+      [olderMatchingSave, recentDifferentSave],
+      {
+        occasion: "work dinner",
+        temperature: 68,
+        temperatureUnit: "fahrenheit",
+        walkingLevel: "moderate",
+        style: "relaxed tailoring",
+      },
+    );
+
+    expect(summary.preferredColors[0]).toBe("cream");
+    expect(summary.preferredStyles[0]).toBe("relaxed tailoring");
   });
 });
