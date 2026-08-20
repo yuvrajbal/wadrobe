@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import {
   type ChangeEvent,
   type FormEvent,
@@ -84,6 +85,7 @@ function itemDraft(item: WardrobeItem): ItemDraft {
 
 export function WardrobeApp() {
   const [activeCategory, setActiveCategory] = useState<ItemCategory>("all");
+  const [searchQuery, setSearchQuery] = useState("");
   const [items, setItems] = useState<WardrobeItem[]>([]);
   const [loadState, setLoadState] = useState<"loading" | "ready" | "error">(
     "loading",
@@ -226,65 +228,122 @@ export function WardrobeApp() {
   }
 
   const availableCount = items.filter((item) => item.available).length;
+  const normalizedSearch = searchQuery.trim().toLowerCase();
+  const visibleItems = normalizedSearch
+    ? items.filter((item) =>
+        [item.name, item.category, item.pattern, ...item.colors].some((value) =>
+          value.toLowerCase().includes(normalizedSearch),
+        ),
+      )
+    : items;
 
   return (
     <main className="min-h-screen pb-28 md:pb-20">
-      <div className="mx-auto w-full max-w-7xl px-5 pt-10 sm:px-8 sm:pt-14">
-        <section className="flex flex-col gap-7 border-b border-emerald-950/10 pb-10 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <p className="text-xs font-semibold tracking-[0.18em] text-emerald-700 uppercase">
-              My wardrobe
-            </p>
-            <h1 className="mt-3 max-w-2xl text-4xl leading-[0.98] font-semibold tracking-[-0.045em] text-emerald-950 sm:text-6xl">
-              Everything you own, ready when you are.
-            </h1>
-            <p className="mt-4 max-w-xl text-sm leading-6 text-emerald-950/60 sm:text-base">
-              Add one garment per photo. Wadrobe reads it once, then keeps the
-              details editable and useful.
-            </p>
-          </div>
-
-          <label className="inline-flex min-h-12 cursor-pointer items-center justify-center gap-2 rounded-full bg-emerald-950 px-6 py-3 text-sm font-semibold text-white shadow-[0_16px_35px_-20px_rgba(6,78,59,0.9)] transition focus-within:ring-4 focus-within:ring-emerald-800/20 hover:bg-emerald-900">
-            <span className="text-lg leading-none">＋</span>
-            Add garment
-            <input
-              className="sr-only"
-              type="file"
-              accept="image/jpeg,image/png,image/webp"
-              onChange={chooseFile}
-            />
-          </label>
-        </section>
-
-        <section className="pt-7">
-          <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
-            <div
-              className="flex gap-2 overflow-x-auto pb-1"
-              aria-label="Wardrobe categories"
-            >
-              {categories.map((category) => (
-                <button
-                  key={category.value}
-                  type="button"
-                  aria-pressed={activeCategory === category.value}
-                  onClick={() => setActiveCategory(category.value)}
-                  className={`shrink-0 rounded-full px-4 py-2 text-sm font-medium transition ${
-                    activeCategory === category.value
-                      ? "bg-emerald-900 text-white"
-                      : "border border-emerald-950/10 bg-white/55 text-emerald-950/65 hover:bg-white"
-                  }`}
-                >
-                  {category.label}
-                </button>
-              ))}
+      <div className="mx-auto w-full max-w-7xl px-5 pt-8 sm:px-8 sm:pt-12">
+        <section className="relative overflow-hidden rounded-[2rem] bg-emerald-950 px-6 py-8 text-white shadow-[0_35px_90px_-55px_rgba(6,78,59,0.9)] sm:px-10 sm:py-11 lg:px-12">
+          <div className="pointer-events-none absolute -top-24 -right-20 h-72 w-72 rounded-full border-[3.5rem] border-white/[0.035]" />
+          <div className="relative flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
+            <div>
+              <p className="text-[0.68rem] font-semibold tracking-[0.2em] text-emerald-200 uppercase">
+                My wardrobe
+              </p>
+              <h1 className="mt-3 max-w-3xl text-[2.8rem] leading-[0.94] tracking-[-0.055em] sm:text-6xl lg:text-[4.35rem]">
+                Everything you own, ready when you are.
+              </h1>
+              <p className="mt-5 max-w-xl text-sm leading-6 text-white/58 sm:text-[0.95rem]">
+                A calmer way to see what you have, build better outfits, and
+                wear more of what you love.
+              </p>
             </div>
 
-            {loadState === "ready" && items.length > 0 ? (
-              <p className="text-sm text-emerald-950/50">
-                {items.length} {items.length === 1 ? "piece" : "pieces"} ·{" "}
-                {availableCount} available
-              </p>
-            ) : null}
+            <div className="flex shrink-0 flex-wrap gap-3">
+              <Link
+                href="/suggestions"
+                className="inline-flex min-h-12 items-center justify-center rounded-full border border-white/16 px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/8"
+              >
+                Suggest a look
+              </Link>
+              <label className="inline-flex min-h-12 cursor-pointer items-center justify-center gap-2 rounded-full bg-[#c7623d] px-5 py-3 text-sm font-semibold text-white shadow-[0_16px_35px_-20px_rgba(0,0,0,0.8)] transition focus-within:ring-4 focus-within:ring-white/20 hover:-translate-y-0.5 hover:bg-[#b75533]">
+                <span className="text-lg leading-none" aria-hidden="true">
+                  ＋
+                </span>
+                Add garment
+                <input
+                  className="sr-only"
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  onChange={chooseFile}
+                />
+              </label>
+            </div>
+          </div>
+        </section>
+
+        <section className="pt-8">
+          <div className="rounded-[1.6rem] border border-emerald-950/8 bg-white/58 p-3 shadow-[0_20px_55px_-45px_rgba(6,78,59,0.6)] backdrop-blur sm:p-4">
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+              <label className="relative block lg:w-[18rem]">
+                <span className="sr-only">Search wardrobe</span>
+                <span
+                  className="pointer-events-none absolute top-1/2 left-4 -translate-y-1/2 text-lg text-emerald-950/38"
+                  aria-hidden="true"
+                >
+                  ⌕
+                </span>
+                <input
+                  type="search"
+                  value={searchQuery}
+                  onChange={(event) => setSearchQuery(event.target.value)}
+                  placeholder="Search name, color, pattern…"
+                  className="min-h-11 w-full rounded-full border border-emerald-950/10 bg-[#fbfaf6] py-2.5 pr-4 pl-11 text-sm text-emerald-950 outline-none placeholder:text-emerald-950/35 focus:border-emerald-700/50 focus:ring-4 focus:ring-emerald-700/8"
+                />
+              </label>
+
+              <div
+                className="flex gap-1.5 overflow-x-auto py-0.5"
+                aria-label="Wardrobe categories"
+              >
+                {categories.map((category) => (
+                  <button
+                    key={category.value}
+                    type="button"
+                    aria-pressed={activeCategory === category.value}
+                    onClick={() => setActiveCategory(category.value)}
+                    className={`shrink-0 rounded-full px-3.5 py-2 text-[0.78rem] font-semibold transition ${
+                      activeCategory === category.value
+                        ? "bg-emerald-950 text-white shadow-sm"
+                        : "text-emerald-950/52 hover:bg-white hover:text-emerald-950"
+                    }`}
+                  >
+                    {category.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-6 flex items-end justify-between gap-4 px-1">
+            <div>
+              <h2 className="display-type text-2xl tracking-[-0.035em] text-emerald-950 sm:text-3xl">
+                {activeCategory === "all"
+                  ? "Your collection"
+                  : categories.find(
+                      (category) => category.value === activeCategory,
+                    )?.label}
+              </h2>
+              {loadState === "ready" && items.length > 0 ? (
+                <p className="mt-1 text-xs text-emerald-950/45 sm:text-sm">
+                  {visibleItems.length}{" "}
+                  {visibleItems.length === 1 ? "piece" : "pieces"}
+                  {activeCategory === "all"
+                    ? ` · ${availableCount} ready to wear`
+                    : ""}
+                </p>
+              ) : null}
+            </div>
+            <p className="hidden text-xs text-emerald-950/38 sm:block">
+              Select an item to view and edit
+            </p>
           </div>
 
           {loadState === "loading" ? <WardrobeSkeleton /> : null}
@@ -303,9 +362,29 @@ export function WardrobeApp() {
             />
           ) : null}
 
-          {loadState === "ready" && items.length > 0 ? (
+          {loadState === "ready" &&
+          items.length > 0 &&
+          visibleItems.length === 0 ? (
+            <div className="mt-7 rounded-[2rem] border border-dashed border-emerald-950/18 bg-white/35 px-6 py-14 text-center">
+              <p className="display-type text-2xl tracking-[-0.03em] text-emerald-950">
+                Nothing matches “{searchQuery.trim()}”
+              </p>
+              <p className="mt-2 text-sm text-emerald-950/50">
+                Try a color, garment name, or pattern.
+              </p>
+              <button
+                type="button"
+                onClick={() => setSearchQuery("")}
+                className="mt-5 rounded-full border border-emerald-950/12 bg-white px-5 py-2.5 text-sm font-semibold text-emerald-950"
+              >
+                Clear search
+              </button>
+            </div>
+          ) : null}
+
+          {loadState === "ready" && visibleItems.length > 0 ? (
             <div className="mt-7 grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-3 xl:grid-cols-4">
-              {items.map((item) => (
+              {visibleItems.map((item) => (
                 <ItemCard
                   item={item}
                   key={item.id}
@@ -354,7 +433,7 @@ function ItemCard({
     <button
       type="button"
       onClick={onOpen}
-      className="group overflow-hidden rounded-[1.4rem] border border-emerald-950/10 bg-white/70 text-left shadow-[0_22px_60px_-45px_rgba(6,78,59,0.65)] transition hover:-translate-y-1 hover:bg-white hover:shadow-[0_28px_65px_-38px_rgba(6,78,59,0.7)] focus:outline-none focus-visible:ring-4 focus-visible:ring-emerald-700/20 sm:rounded-[1.75rem]"
+      className="group overflow-hidden rounded-[1.4rem] border border-emerald-950/8 bg-[#fbfaf6]/82 text-left shadow-[0_22px_60px_-48px_rgba(6,78,59,0.65)] transition duration-300 hover:-translate-y-1 hover:border-emerald-950/14 hover:bg-white hover:shadow-[0_30px_65px_-42px_rgba(6,78,59,0.68)] focus:outline-none focus-visible:ring-4 focus-visible:ring-emerald-700/20 sm:rounded-[1.75rem]"
     >
       <div className="relative aspect-[4/5] overflow-hidden bg-emerald-950/5">
         <Image
@@ -365,13 +444,16 @@ function ItemCard({
           className="object-cover transition duration-500 group-hover:scale-[1.025]"
         />
         <span
-          className={`absolute top-3 left-3 rounded-full px-2.5 py-1 text-[0.68rem] font-semibold backdrop-blur ${
+          className={`absolute top-3 left-3 rounded-full px-2.5 py-1 text-[0.65rem] font-semibold backdrop-blur ${
             item.available
               ? "bg-emerald-950/80 text-white"
               : "bg-stone-100/90 text-stone-600"
           }`}
         >
           {item.available ? "Available" : "Unavailable"}
+        </span>
+        <span className="absolute right-3 bottom-3 translate-y-2 rounded-full bg-white/92 px-3 py-1.5 text-[0.68rem] font-semibold text-emerald-950 opacity-0 shadow-sm backdrop-blur transition group-hover:translate-y-0 group-hover:opacity-100 group-focus-visible:translate-y-0 group-focus-visible:opacity-100">
+          View details
         </span>
       </div>
       <div className="p-3.5 sm:p-5">
