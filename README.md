@@ -112,10 +112,12 @@ style direction. Temperature can be entered manually or filled from browser
 geolocation through the server-side Open-Meteo adapter.
 
 `POST /api/suggestions` loads only the current user's available wardrobe items
-and a bounded set of recent saved/rejected outfits. The model receives compact
-item attributes and feedback IDs—never images, image URLs, names, notes, or user
-IDs. Its structured response is validated for known item IDs, required category
-coverage, availability, distinct combinations, and a maximum of three looks.
+and a bounded set of recent saved/rejected outfits. A deterministic, recency-
+weighted summary captures preferred and avoided items, colors, formality levels,
+and styles. The model receives that summary, compact item attributes, and
+feedback IDs—never images, image URLs, names, notes, or user IDs. Its structured
+response is validated for known item IDs, required category coverage,
+availability, distinct combinations, and a maximum of three looks.
 Malformed or invalid responses are retried once.
 
 Each suggestion can be:
@@ -134,15 +136,20 @@ the temperature field remains manually editable.
 - Phase 1 — wardrobe: complete (merged in PR #1)
 - Phase 2 — manual outfit builder: complete
 - Phase 3 — context-aware suggestions: complete
-- Phase 4 — saved-outfit personalization: planned (basic saved gallery exists)
+- Phase 4 — saved-outfit personalization: complete
 - Phase 5 — polish: planned
 
 ## Useful commands
 
 ```bash
 npm run check        # formatting, lint, types, and tests
+npm run test:e2e     # browser-level user journeys (API boundaries are mocked)
 npm run build        # production Next.js build
 npm run db:migrate   # apply pending migrations
 ```
+
+The Playwright suite starts the app on port 3100 and uses deterministic API
+responses, so it does not require Postgres or an OpenAI key. Install Chromium
+once with `npm run test:e2e:install` before running it locally.
 
 Only server modules read `OPENAI_API_KEY`; never create a `NEXT_PUBLIC_` variant.

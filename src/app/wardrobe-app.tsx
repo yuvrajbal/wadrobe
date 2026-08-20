@@ -307,6 +307,7 @@ export function WardrobeApp() {
                   <button
                     key={category.value}
                     type="button"
+                    aria-pressed={activeCategory === category.value}
                     onClick={() => setActiveCategory(category.value)}
                     className={`shrink-0 rounded-full px-3.5 py-2 text-[0.78rem] font-semibold transition ${
                       activeCategory === category.value
@@ -401,6 +402,7 @@ export function WardrobeApp() {
           previewUrl={previewUrl}
           isUploading={isUploading}
           error={uploadError}
+          onChooseFile={chooseFile}
           onCancel={() => {
             if (!isUploading) clearPendingUpload();
           }}
@@ -567,18 +569,56 @@ function DialogShell({
   disabled?: boolean;
   children: React.ReactNode;
 }) {
+  const dialogRef = useRef<HTMLElement>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const onCloseRef = useRef(onClose);
+  const disabledRef = useRef(disabled);
+
+  useEffect(() => {
+    onCloseRef.current = onClose;
+    disabledRef.current = disabled;
+  }, [disabled, onClose]);
+
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape" && !disabled) onClose();
+      if (event.key === "Escape" && !disabledRef.current) {
+        onCloseRef.current();
+        return;
+      }
+
+      if (event.key !== "Tab" || !dialogRef.current) return;
+      const focusable = Array.from(
+        dialogRef.current.querySelectorAll<HTMLElement>(
+          "button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), a[href]",
+        ),
+      );
+      if (focusable.length === 0) {
+        event.preventDefault();
+        dialogRef.current.focus();
+        return;
+      }
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
     }
 
+    const previousFocus = document.activeElement as HTMLElement | null;
+    const previousOverflow = document.body.style.overflow;
     document.addEventListener("keydown", onKeyDown);
     document.body.style.overflow = "hidden";
+    closeButtonRef.current?.focus();
     return () => {
       document.removeEventListener("keydown", onKeyDown);
-      document.body.style.overflow = "";
+      document.body.style.overflow = previousOverflow;
+      previousFocus?.focus();
     };
-  }, [disabled, onClose]);
+  }, []);
 
   return (
     <div
@@ -589,6 +629,8 @@ function DialogShell({
       }}
     >
       <section
+        ref={dialogRef}
+        tabIndex={-1}
         role="dialog"
         aria-modal="true"
         aria-label={title}
@@ -599,6 +641,7 @@ function DialogShell({
             {title}
           </h2>
           <button
+            ref={closeButtonRef}
             type="button"
             aria-label="Close dialog"
             disabled={disabled}
@@ -619,6 +662,7 @@ function UploadDialog({
   previewUrl,
   isUploading,
   error,
+  onChooseFile,
   onCancel,
   onUpload,
 }: {
@@ -626,6 +670,7 @@ function UploadDialog({
   previewUrl: string;
   isUploading: boolean;
   error: string;
+  onChooseFile: (event: ChangeEvent<HTMLInputElement>) => void;
   onCancel: () => void;
   onUpload: () => void;
 }) {
@@ -681,14 +726,20 @@ function UploadDialog({
           ) : null}
 
           <div className="mt-6 flex gap-3">
-            <button
-              type="button"
-              disabled={isUploading}
-              onClick={onCancel}
-              className="flex-1 rounded-full border border-emerald-950/15 bg-white px-4 py-3 text-sm font-semibold text-emerald-950 disabled:opacity-40"
+            <label
+              className={`flex flex-1 items-center justify-center rounded-full border border-emerald-950/15 bg-white px-4 py-3 text-sm font-semibold text-emerald-950 ${
+                isUploading ? "cursor-not-allowed opacity-40" : "cursor-pointer"
+              }`}
             >
               Choose another
-            </button>
+              <input
+                className="sr-only"
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                disabled={isUploading}
+                onChange={onChooseFile}
+              />
+            </label>
             <button
               type="button"
               disabled={isUploading}
@@ -957,6 +1008,7 @@ function ItemDialog({
                     <button
                       type="button"
                       key={season}
+                      aria-pressed={active}
                       onClick={() => toggleSeason(season)}
                       className={`rounded-full px-3.5 py-2 text-xs font-semibold capitalize transition ${
                         active

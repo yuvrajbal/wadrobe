@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 type WardrobeItem = { id: string; imageUrl: string; name: string };
 type Outfit = { id: string; itemIds: string[]; createdAt: string };
@@ -12,29 +12,34 @@ export function SavedOutfits() {
   const [items, setItems] = useState<WardrobeItem[]>([]);
   const [state, setState] = useState<"loading" | "ready" | "error">("loading");
 
-  useEffect(() => {
-    async function load() {
-      try {
-        const [outfitsResponse, itemsResponse] = await Promise.all([
-          fetch("/api/outfits?status=saved", { cache: "no-store" }),
-          fetch("/api/items", { cache: "no-store" }),
-        ]);
-        if (!outfitsResponse.ok || !itemsResponse.ok) throw new Error();
-        const outfitBody = (await outfitsResponse.json()) as {
-          outfits: Outfit[];
-        };
-        const itemBody = (await itemsResponse.json()) as {
-          items: WardrobeItem[];
-        };
-        setOutfits(outfitBody.outfits);
-        setItems(itemBody.items);
-        setState("ready");
-      } catch {
-        setState("error");
-      }
+  const load = useCallback(async () => {
+    setState("loading");
+    try {
+      const [outfitsResponse, itemsResponse] = await Promise.all([
+        fetch("/api/outfits?status=saved", { cache: "no-store" }),
+        fetch("/api/items", { cache: "no-store" }),
+      ]);
+      if (!outfitsResponse.ok || !itemsResponse.ok) throw new Error();
+      const outfitBody = (await outfitsResponse.json()) as {
+        outfits: Outfit[];
+      };
+      const itemBody = (await itemsResponse.json()) as {
+        items: WardrobeItem[];
+      };
+      setOutfits(outfitBody.outfits);
+      setItems(itemBody.items);
+      setState("ready");
+    } catch {
+      setState("error");
     }
-    void load();
   }, []);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      void load();
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [load]);
 
   const itemMap = new Map(items.map((item) => [item.id, item]));
 
@@ -74,9 +79,16 @@ export function SavedOutfits() {
         ) : null}
 
         {state === "error" ? (
-          <p className="mt-9 rounded-3xl bg-red-50 p-6 text-sm text-red-900">
-            Saved outfits could not be loaded. Refresh to try again.
-          </p>
+          <div className="mt-9 rounded-3xl bg-red-50 p-6 text-sm text-red-900">
+            <p>Saved outfits could not be loaded.</p>
+            <button
+              type="button"
+              onClick={() => void load()}
+              className="mt-4 rounded-full bg-red-950 px-5 py-2.5 text-sm font-semibold text-white"
+            >
+              Try again
+            </button>
+          </div>
         ) : null}
 
         {state === "ready" && outfits.length === 0 ? (

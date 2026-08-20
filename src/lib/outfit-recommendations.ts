@@ -3,6 +3,7 @@ import "server-only";
 import { zodTextFormat } from "openai/helpers/zod";
 
 import type { Item, Outfit } from "@/lib/db/schema";
+import type { PersonalizationSummary } from "@/lib/outfit-personalization";
 import {
   outfitSuggestionsSchema,
   type OutfitSuggestions,
@@ -83,10 +84,12 @@ export async function recommendOutfits({
   items,
   context,
   feedback,
+  personalization,
 }: {
   items: Item[];
   context: RecommendationContext;
   feedback: Outfit[];
+  personalization: PersonalizationSummary;
 }): Promise<OutfitSuggestions> {
   const categories = new Set(items.map((item) => item.category));
   if (
@@ -100,6 +103,7 @@ export async function recommendOutfits({
   const payload = {
     context,
     availableItems: items.map(compactItem),
+    personalization,
     recentFeedback: feedback.map(compactFeedback),
   };
   let lastValidationError: unknown;
@@ -116,7 +120,7 @@ export async function recommendOutfits({
           {
             role: "system",
             content:
-              "Create up to three distinct, wearable outfits for the request. Use only supplied available item IDs. Every outfit must contain exactly one top, one bottom, and one pair of shoes, with at most one outerwear and one accessory. Account for temperature, walking, occasion, style, season, color, pattern, and formality. Treat recent saves as positive and rejections as negative signals without repeating them mechanically. Keep each rationale practical and concise. Return only the requested structure.",
+              "Create up to three distinct, wearable outfits for the request. Use only supplied available item IDs. Every outfit must contain exactly one top, one bottom, and one pair of shoes, with at most one outerwear and one accessory. Account for temperature, walking, occasion, style, season, color, pattern, and formality. Use the personalization summary as soft preferences, treating preferred signals positively and avoided signals negatively. Use recent feedback for context without repeating past outfits mechanically. When signals conflict with the current request, prioritize practicality and the current context. Keep each rationale practical and concise. Return only the requested structure.",
           },
           {
             role: "user",
