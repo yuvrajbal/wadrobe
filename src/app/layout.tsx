@@ -5,7 +5,10 @@ import { AppNavigation } from "@/app/app-navigation";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Wadrobe",
+  title: {
+    default: "Wadrobe",
+    template: "%s · Wadrobe",
+  },
   description: "A thoughtful, AI-assisted wardrobe.",
 };
 

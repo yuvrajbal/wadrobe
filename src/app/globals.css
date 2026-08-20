@@ -1,8 +1,10 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f7f5ef;
-  --foreground: #1f2a24;
+  --background: #f3f0e8;
+  --foreground: #16352b;
+  --surface: #fbfaf6;
+  --accent: #c7623d;
 }
 
 * {
@@ -11,6 +13,7 @@
 
 html {
   background: var(--background);
+  scroll-behavior: smooth;
 }
 
 body {
@@ -18,14 +21,31 @@ body {
   margin: 0;
   background:
     radial-gradient(
-      circle at top left,
-      rgb(220 235 224 / 75%),
-      transparent 32rem
+      circle at 5% -5%,
+      rgb(200 220 204 / 68%),
+      transparent 34rem
+    ),
+    radial-gradient(
+      circle at 92% 24%,
+      rgb(238 204 180 / 28%),
+      transparent 28rem
     ),
     var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
   text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+.display-type {
+  font-family: Georgia, "Times New Roman", serif;
+  font-weight: 400;
+}
+
+::selection {
+  background: rgb(199 98 61 / 22%);
+  color: #16352b;
 }
 
 button,
@@ -40,4 +60,48 @@ label,
 select,
 input[type="checkbox"] {
   -webkit-tap-highlight-color: transparent;
+}
+
+button,
+a,
+input,
+select,
+textarea {
+  outline-offset: 3px;
+}
+
+:focus-visible {
+  outline: 2px solid rgb(199 98 61 / 75%);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  main {
+    animation: page-enter 420ms ease-out both;
+  }
+}
+
+@keyframes page-enter {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
 }
