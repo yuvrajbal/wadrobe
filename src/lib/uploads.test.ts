@@ -10,7 +10,7 @@ vi.mock("server-only", () => ({}));
 vi.mock("@/lib/image-storage", () => ({
   getImageStorage: () => storageMocks,
   imageObjectKeyPattern:
-    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.(jpg|png|webp)$/i,
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.(jpg|png|webp|svg)$/i,
 }));
 
 import {
@@ -32,6 +32,9 @@ describe("stored image references", () => {
     ).toBe("123e4567-e89b-42d3-a456-426614174000.jpg");
     expect(getStoredImageKey("https://example.com/shirt.jpg")).toBeNull();
     expect(getStoredImageKey("/api/images/../private.txt")).toBeNull();
+    expect(
+      getStoredImageKey("/api/images/123e4567-e89b-42d3-a456-426614174000.svg"),
+    ).toBe("123e4567-e89b-42d3-a456-426614174000.svg");
   });
 
   it("stores, retrieves, and deletes through the configured adapter", async () => {

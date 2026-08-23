@@ -75,8 +75,10 @@ npm run db:migrate:shared
 ```
 
 The dry run checks UUID conflicts, outfit references, local paths, image size,
-and JPEG/PNG/WebP signatures without changing the database or bucket. Resolve
-every reported conflict rather than overwriting it.
+and JPEG/PNG/WebP signatures without changing the database or bucket. The
+repository-generated Spain-trip SVG fixtures are also recognized and checked
+for active content; arbitrary SVG uploads remain unsupported. Resolve every
+reported conflict rather than overwriting it.
 
 When the plan is correct:
 

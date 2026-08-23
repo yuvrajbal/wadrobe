@@ -10,6 +10,7 @@ import path from "node:path";
 import postgres from "postgres";
 
 const MAX_IMAGE_SIZE_BYTES = 10 * 1024 * 1024;
+const SPAIN_FIXTURE_MARKER = "Spain trip checklist fixture";
 const apply = process.env.MIGRATION_APPLY === "true";
 
 function required(name) {
@@ -31,7 +32,7 @@ function normalizePrefix(prefix) {
   return value ? `${value}/` : "";
 }
 
-function mimeType(bytes, extension) {
+function mimeType(bytes, extension, item) {
   const has = (signature, offset = 0) =>
     signature.every((byte, index) => bytes[offset + index] === byte);
 
@@ -48,6 +49,15 @@ function mimeType(bytes, extension) {
     has([0x57, 0x45, 0x42, 0x50], 8)
   ) {
     return "image/webp";
+  }
+  if (extension === "svg" && item.notes === SPAIN_FIXTURE_MARKER) {
+    const source = bytes.toString("utf8").trimStart();
+    if (
+      source.startsWith("<svg") &&
+      !/<script|<foreignObject|\son[a-z]+\s*=/i.test(source)
+    ) {
+      return "image/svg+xml";
+    }
   }
   throw new Error(`Image contents do not match the .${extension} extension.`);
 }
@@ -185,7 +195,7 @@ try {
     }
 
     const extension = path.extname(relativePath).slice(1).toLowerCase();
-    if (!["jpg", "jpeg", "png", "webp"].includes(extension)) {
+    if (!["jpg", "jpeg", "png", "webp", "svg"].includes(extension)) {
       throw new Error(
         `Item ${item.id} uses unsupported legacy image ${item.imageUrl}. Convert it to JPEG, PNG, or WebP before migrating.`,
       );
@@ -195,7 +205,7 @@ try {
     if (body.byteLength === 0 || body.byteLength > MAX_IMAGE_SIZE_BYTES) {
       throw new Error(`Item ${item.id} has an empty or oversized image.`);
     }
-    const contentType = mimeType(body, normalizedExtension);
+    const contentType = mimeType(body, normalizedExtension, item);
     const key = `${item.id}.${normalizedExtension}`;
     imagePlans.push({
       body,

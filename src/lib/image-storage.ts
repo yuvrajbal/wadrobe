@@ -10,7 +10,7 @@ import { mkdir, readFile, unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
 
 export const imageObjectKeyPattern =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.(jpg|png|webp)$/i;
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.(jpg|png|webp|svg)$/i;
 
 export type StoredObject = {
   body: Uint8Array;
@@ -33,6 +33,7 @@ function requireValidKey(key: string) {
 function contentTypeForKey(key: string): string {
   if (key.endsWith(".jpg")) return "image/jpeg";
   if (key.endsWith(".png")) return "image/png";
+  if (key.endsWith(".svg")) return "image/svg+xml";
   return "image/webp";
 }
 
