@@ -78,6 +78,7 @@ describe("POST /api/suggestions", () => {
         { id: "unavailable-item", available: false },
       ],
       [{ status: "saved" }],
+      context,
     );
     expect(routeMocks.recommendOutfits).toHaveBeenCalledWith({
       items: [{ id: "available-item", available: true }],

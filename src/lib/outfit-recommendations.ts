@@ -45,16 +45,48 @@ function compactFeedback(outfit: Outfit) {
   };
 }
 
+function outfitSignature(itemIds: string[]) {
+  return [...itemIds].sort().join(":");
+}
+
+function rejectedSignaturesWithAlternatives(items: Item[], feedback: Outfit[]) {
+  const availableIds = new Set(items.map(({ id }) => id));
+  const rejected = new Set(
+    feedback
+      .filter(
+        (outfit) =>
+          outfit.status === "rejected" &&
+          outfit.itemIds.every((id) => availableIds.has(id)),
+      )
+      .map((outfit) => outfitSignature(outfit.itemIds)),
+  );
+  const categoryCount = (category: Item["category"]) =>
+    items.filter((item) => item.category === category).length;
+  const possibleOutfits =
+    categoryCount("top") *
+    categoryCount("bottom") *
+    categoryCount("shoes") *
+    (categoryCount("outerwear") + 1) *
+    (categoryCount("accessory") + 1);
+
+  return possibleOutfits > rejected.size ? rejected : new Set<string>();
+}
+
 function validateSuggestionItems(
   result: OutfitSuggestions,
   availableItems: Item[],
-): boolean {
+  rejectedSignatures: Set<string>,
+): string[] {
   const itemMap = new Map(availableItems.map((item) => [item.id, item]));
   const seenOutfits = new Set<string>();
+  const errors: string[] = [];
 
-  for (const suggestion of result.suggestions) {
+  for (const [index, suggestion] of result.suggestions.entries()) {
     const selected = suggestion.itemIds.map((id) => itemMap.get(id));
-    if (selected.some((item) => !item)) return false;
+    if (selected.some((item) => !item)) {
+      errors.push(`Look ${index + 1} referenced an unavailable item.`);
+      continue;
+    }
 
     const counts = new Map<string, number>();
     for (const item of selected) {
@@ -69,15 +101,20 @@ function validateSuggestionItems(
         (category) => (counts.get(category) ?? 0) > 1,
       )
     ) {
-      return false;
+      errors.push(`Look ${index + 1} had invalid category coverage.`);
     }
 
-    const signature = [...suggestion.itemIds].sort().join(":");
-    if (seenOutfits.has(signature)) return false;
+    const signature = outfitSignature(suggestion.itemIds);
+    if (seenOutfits.has(signature)) {
+      errors.push(`Look ${index + 1} duplicated another suggestion.`);
+    }
+    if (rejectedSignatures.has(signature)) {
+      errors.push(`Look ${index + 1} exactly repeated a rejected outfit.`);
+    }
     seenOutfits.add(signature);
   }
 
-  return true;
+  return errors;
 }
 
 export async function recommendOutfits({
@@ -106,7 +143,12 @@ export async function recommendOutfits({
     personalization,
     recentFeedback: feedback.map(compactFeedback),
   };
+  const rejectedSignatures = rejectedSignaturesWithAlternatives(
+    items,
+    feedback,
+  );
   let lastValidationError: unknown;
+  let repairInstruction: string | undefined;
 
   for (let attempt = 0; attempt < 2; attempt += 1) {
     let response: { output_parsed?: unknown };
@@ -120,8 +162,16 @@ export async function recommendOutfits({
           {
             role: "system",
             content:
-              "Create up to three distinct, wearable outfits for the request. Use only supplied available item IDs. Every outfit must contain exactly one top, one bottom, and one pair of shoes, with at most one outerwear and one accessory. Account for temperature, walking, occasion, style, season, color, pattern, and formality. Use the personalization summary as soft preferences, treating preferred signals positively and avoided signals negatively. Use recent feedback for context without repeating past outfits mechanically. When signals conflict with the current request, prioritize practicality and the current context. Keep each rationale practical and concise. Return only the requested structure.",
+              "Create three ranked, genuinely distinct, wearable outfits when the wardrobe allows it; otherwise return as many as are feasible. Use only supplied available item IDs. Every outfit must contain exactly one top, one bottom, and one pair of shoes, with at most one outerwear and one accessory. Rank priorities in this order: occasion and formality, temperature and season suitability, walking comfort, color and pattern harmony, then personalization. Treat preferred personalization signals positively and avoided signals negatively. Never exactly repeat a recent rejected outfit when another combination is possible. Vary core pieces, not only accessories, whenever inventory permits. Each rationale must name the practical reason the look fits this request without mentioning feedback. Return only the requested structure.",
           },
+          ...(repairInstruction
+            ? [
+                {
+                  role: "system" as const,
+                  content: repairInstruction,
+                },
+              ]
+            : []),
           {
             role: "user",
             content: JSON.stringify(payload),
@@ -139,13 +189,25 @@ export async function recommendOutfits({
     }
 
     const result = outfitSuggestionsSchema.safeParse(response.output_parsed);
-    if (result.success && validateSuggestionItems(result.data, items)) {
-      return result.data;
+    if (result.success) {
+      const validationErrors = validateSuggestionItems(
+        result.data,
+        items,
+        rejectedSignatures,
+      );
+      if (validationErrors.length === 0) return result.data;
+      lastValidationError = new Error(validationErrors.join(" "));
+      repairInstruction = `The previous response was invalid: ${validationErrors.join(" ")} Return a corrected, fully valid set.`;
+    } else {
+      const schemaErrors = result.error.issues
+        .slice(0, 3)
+        .map(
+          (issue) => `${issue.path.join(".") || "response"}: ${issue.message}`,
+        )
+        .join("; ");
+      lastValidationError = result.error;
+      repairInstruction = `The previous response did not match the required structure: ${schemaErrors}. Return a corrected, fully valid set.`;
     }
-
-    lastValidationError = result.success
-      ? new Error("The response referenced invalid outfit combinations.")
-      : result.error;
   }
 
   throw new OutfitRecommendationError(
