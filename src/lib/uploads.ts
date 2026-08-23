@@ -1,6 +1,10 @@
 import { randomUUID } from "node:crypto";
-import { mkdir, unlink, writeFile } from "node:fs/promises";
-import path from "node:path";
+
+import {
+  getImageStorage,
+  imageObjectKeyPattern,
+  type StoredObject,
+} from "@/lib/image-storage";
 
 export const MAX_IMAGE_SIZE_BYTES = 10 * 1024 * 1024;
 
@@ -13,24 +17,21 @@ const extensionsByMimeType = {
 export type SupportedMimeType = keyof typeof extensionsByMimeType;
 
 export type StoredImage = {
-  fileName: string;
+  key: string;
   size: number;
   type: SupportedMimeType;
   url: string;
 };
 
-const storedImageNamePattern =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.(jpg|png|webp)$/i;
+const imageDeliveryPrefix = "/api/images/";
 
-export function getStoredImageFileName(imageUrl: string): string | null {
-  const uploadsPrefix = "/uploads/";
-
-  if (!imageUrl.startsWith(uploadsPrefix)) {
+export function getStoredImageKey(imageUrl: string): string | null {
+  if (!imageUrl.startsWith(imageDeliveryPrefix)) {
     return null;
   }
 
-  const fileName = imageUrl.slice(uploadsPrefix.length);
-  return storedImageNamePattern.test(fileName) ? fileName : null;
+  const key = imageUrl.slice(imageDeliveryPrefix.length);
+  return imageObjectKeyPattern.test(key) ? key : null;
 }
 
 export class UploadValidationError extends Error {
@@ -101,35 +102,27 @@ export async function validateImageFile(
 
 export async function storeImage(file: File): Promise<StoredImage> {
   const type = await validateImageFile(file);
-  const fileName = `${randomUUID()}.${extensionsByMimeType[type]}`;
-  const uploadDirectory = path.join(process.cwd(), "public", "uploads");
-  const destination = path.join(uploadDirectory, fileName);
-
-  await mkdir(uploadDirectory, { recursive: true });
-  await writeFile(destination, new Uint8Array(await file.arrayBuffer()), {
-    flag: "wx",
-  });
+  const key = `${randomUUID()}.${extensionsByMimeType[type]}`;
+  await getImageStorage().put(
+    key,
+    new Uint8Array(await file.arrayBuffer()),
+    type,
+  );
 
   return {
-    fileName,
+    key,
     size: file.size,
     type,
-    url: `/uploads/${fileName}`,
+    url: `${imageDeliveryPrefix}${key}`,
   };
 }
 
-export async function deleteStoredImage(fileName: string): Promise<void> {
-  if (!storedImageNamePattern.test(fileName)) {
-    throw new Error("Refusing to delete an invalid stored image name.");
-  }
+export async function readStoredImage(
+  key: string,
+): Promise<StoredObject | null> {
+  return getImageStorage().get(key);
+}
 
-  const destination = path.join(process.cwd(), "public", "uploads", fileName);
-
-  try {
-    await unlink(destination);
-  } catch (error) {
-    if ((error as NodeJS.ErrnoException).code !== "ENOENT") {
-      throw error;
-    }
-  }
+export async function deleteStoredImage(key: string): Promise<void> {
+  await getImageStorage().delete(key);
 }

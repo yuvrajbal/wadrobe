@@ -5,7 +5,7 @@ import { and, desc, eq } from "drizzle-orm";
 import { getDatabase } from "@/lib/db";
 import { items, type Item } from "@/lib/db/schema";
 import type { ItemListFilters, ItemUpdate } from "@/lib/item-schema";
-import { deleteStoredImage, getStoredImageFileName } from "@/lib/uploads";
+import { deleteStoredImage, getStoredImageKey } from "@/lib/uploads";
 
 export async function listWardrobeItems(
   userId: string,
@@ -55,11 +55,11 @@ export async function deleteWardrobeItem(
     return null;
   }
 
-  const fileName = getStoredImageFileName(item.imageUrl);
+  const imageKey = getStoredImageKey(item.imageUrl);
 
-  if (fileName) {
+  if (imageKey) {
     try {
-      await deleteStoredImage(fileName);
+      await deleteStoredImage(imageKey);
     } catch (error) {
       // The database deletion is authoritative. A storage failure should not
       // make a successful delete look retryable and produce a later 404.

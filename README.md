@@ -8,7 +8,7 @@ manual weather, walking level, style direction, and recent save/reject feedback.
 ## Requirements
 
 - Node.js 20.9 or newer
-- Docker with Compose (for the local Postgres instance)
+- Docker with Compose (for the optional local Postgres instance)
 - An OpenAI API key (used for garment ingestion, critique, and recommendations)
 
 ## Local setup
@@ -40,15 +40,23 @@ is removed.
 
 `POST /api/uploads` accepts multipart form data in a field named `file`. It
 accepts JPEG, PNG, and WebP files up to 10 MB, checks the file signature, stores
-the image under `public/uploads`, and returns its public URL.
+the image through the configured storage adapter, and returns a stable app URL.
 
 ```bash
 curl -F "file=@./shirt.png" http://localhost:3000/api/uploads
 ```
 
-Local-disk storage is intentionally an MVP adapter. Replace it with durable
-object storage before deploying across multiple or ephemeral application
-instances.
+Local development defaults to `.data/uploads`. Shared environments must set
+`IMAGE_STORAGE_DRIVER=s3` and the `S3_*` server variables. Objects remain in a
+private bucket; `GET /api/images/:key` delivers them through the app, so no
+storage credentials or expiring URLs are sent to the browser. Uploads, reads,
+rollback cleanup, and item deletion all use the same adapter.
+
+The selected shared deployment is [Neon Postgres](https://neon.com/docs/connect/connection-pooling)
+plus private [Cloudflare R2](https://developers.cloudflare.com/r2/get-started/s3/).
+The adapter is S3-compatible, so another S3 provider can be used with the same
+configuration. See [the migration runbook](docs/shared-persistence-migration.md)
+for provisioning, backups, dry-run, merge, verification, and rollback.
 
 ## Wardrobe item ingestion
 
@@ -73,7 +81,7 @@ Outputs and does not store the model response at OpenAI.
 - `PATCH /api/items/:id` accepts any non-empty subset of the editable item
   fields: name, category, colors, pattern, formality, season, material, fit,
   notes, and availability.
-- `DELETE /api/items/:id` deletes an owned item and cleans up its local image.
+- `DELETE /api/items/:id` deletes an owned item and cleans up its stored image.
 
 Every operation is scoped server-side to `getCurrentUserId()`; clients cannot
 select or change a user ID.
@@ -153,4 +161,6 @@ The Playwright suite starts the app on port 3100 and uses deterministic API
 responses, so it does not require Postgres or an OpenAI key. Install Chromium
 once with `npm run test:e2e:install` before running it locally.
 
-Only server modules read `OPENAI_API_KEY`; never create a `NEXT_PUBLIC_` variant.
+Only server modules read `OPENAI_API_KEY`, `DATABASE_URL`, and storage
+credentials; never create `NEXT_PUBLIC_` variants. `DATABASE_SSL` defaults to
+`require`; only the local Docker database should set it to `disable`.
