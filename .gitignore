@@ -15,6 +15,9 @@
 /public/uploads/*
 !/public/uploads/.gitkeep
 
+# local image-storage adapter
+/.data/
+
 # test and tooling output
 /coverage
 /playwright-report

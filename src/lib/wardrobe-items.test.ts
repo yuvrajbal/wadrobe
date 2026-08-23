@@ -5,7 +5,7 @@ const itemMocks = vi.hoisted(() => ({
   deleteReturning: vi.fn(),
   deleteStoredImage: vi.fn(),
   deleteWhere: vi.fn(),
-  getStoredImageFileName: vi.fn(),
+  getStoredImageKey: vi.fn(),
   insert: vi.fn(),
   listFrom: vi.fn(),
   listOrderBy: vi.fn(),
@@ -28,7 +28,7 @@ vi.mock("@/lib/db", () => ({
 }));
 vi.mock("@/lib/uploads", () => ({
   deleteStoredImage: itemMocks.deleteStoredImage,
-  getStoredImageFileName: itemMocks.getStoredImageFileName,
+  getStoredImageKey: itemMocks.getStoredImageKey,
 }));
 
 import {
@@ -76,7 +76,7 @@ describe("wardrobe item persistence", () => {
       returning: itemMocks.deleteReturning,
     });
     itemMocks.deleteReturning.mockResolvedValue([item]);
-    itemMocks.getStoredImageFileName.mockReturnValue(
+    itemMocks.getStoredImageKey.mockReturnValue(
       "123e4567-e89b-42d3-a456-426614174000.jpg",
     );
   });
@@ -97,7 +97,7 @@ describe("wardrobe item persistence", () => {
     expect(itemMocks.updateSet).toHaveBeenCalledWith({ notes: "favorite" });
   });
 
-  it("deletes the row and its locally stored image", async () => {
+  it("deletes the row and its stored image", async () => {
     await expect(deleteWardrobeItem(item.id, userId)).resolves.toEqual(item);
 
     expect(itemMocks.deleteStoredImage).toHaveBeenCalledWith(

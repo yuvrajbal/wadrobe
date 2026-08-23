@@ -3,6 +3,7 @@ import "server-only";
 import { z } from "zod";
 
 const databaseUrlSchema = z.url().startsWith("postgres");
+const databaseSslSchema = z.enum(["require", "disable"]);
 const openAIKeySchema = z.string().min(1);
 
 function parseServerVariable<T>(
@@ -25,6 +26,15 @@ export function getDatabaseUrl(): string {
     process.env.DATABASE_URL,
     databaseUrlSchema,
   );
+}
+
+export function getDatabaseSsl(): "require" | false {
+  const mode = parseServerVariable(
+    "DATABASE_SSL",
+    process.env.DATABASE_SSL ?? "require",
+    databaseSslSchema,
+  );
+  return mode === "require" ? "require" : false;
 }
 
 export function getOpenAIKey(): string {

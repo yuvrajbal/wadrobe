@@ -29,7 +29,7 @@ export async function ingestWardrobeItem(file: File, userId: string) {
   } catch (error) {
     if (upload) {
       try {
-        await deleteStoredImage(upload.fileName);
+        await deleteStoredImage(upload.key);
       } catch (cleanupError) {
         console.error("Failed to clean up wardrobe image", cleanupError);
       }

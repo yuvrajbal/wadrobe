@@ -1,21 +1,64 @@
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+const storageMocks = vi.hoisted(() => ({
+  delete: vi.fn(),
+  get: vi.fn(),
+  put: vi.fn(),
+}));
+
+vi.mock("server-only", () => ({}));
+vi.mock("@/lib/image-storage", () => ({
+  getImageStorage: () => storageMocks,
+  imageObjectKeyPattern:
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.(jpg|png|webp|svg)$/i,
+}));
 
 import {
-  getStoredImageFileName,
+  deleteStoredImage,
+  getStoredImageKey,
   MAX_IMAGE_SIZE_BYTES,
+  readStoredImage,
+  storeImage,
   UploadValidationError,
   validateImageFile,
 } from "@/lib/uploads";
 
-describe("getStoredImageFileName", () => {
-  it("extracts only generated local upload names", () => {
+describe("stored image references", () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it("extracts only generated object keys", () => {
     expect(
-      getStoredImageFileName(
-        "/uploads/123e4567-e89b-42d3-a456-426614174000.jpg",
-      ),
+      getStoredImageKey("/api/images/123e4567-e89b-42d3-a456-426614174000.jpg"),
     ).toBe("123e4567-e89b-42d3-a456-426614174000.jpg");
-    expect(getStoredImageFileName("https://example.com/shirt.jpg")).toBeNull();
-    expect(getStoredImageFileName("/uploads/../private.txt")).toBeNull();
+    expect(getStoredImageKey("https://example.com/shirt.jpg")).toBeNull();
+    expect(getStoredImageKey("/api/images/../private.txt")).toBeNull();
+    expect(
+      getStoredImageKey("/api/images/123e4567-e89b-42d3-a456-426614174000.svg"),
+    ).toBe("123e4567-e89b-42d3-a456-426614174000.svg");
+  });
+
+  it("stores, retrieves, and deletes through the configured adapter", async () => {
+    const file = new File([new Uint8Array([0xff, 0xd8, 0xff])], "shirt.jpg", {
+      type: "image/jpeg",
+    });
+    const storedObject = {
+      body: new Uint8Array([0xff, 0xd8, 0xff]),
+      contentType: "image/jpeg",
+      size: 3,
+    };
+    storageMocks.get.mockResolvedValue(storedObject);
+
+    const upload = await storeImage(file);
+    expect(upload.url).toBe(`/api/images/${upload.key}`);
+    expect(storageMocks.put).toHaveBeenCalledWith(
+      upload.key,
+      new Uint8Array([0xff, 0xd8, 0xff]),
+      "image/jpeg",
+    );
+
+    await expect(readStoredImage(upload.key)).resolves.toEqual(storedObject);
+    await deleteStoredImage(upload.key);
+    expect(storageMocks.delete).toHaveBeenCalledWith(upload.key);
   });
 });
 

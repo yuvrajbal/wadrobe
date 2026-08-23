@@ -24,10 +24,10 @@ vi.mock("@/lib/wardrobe-vision", () => ({
 import { ingestWardrobeItem } from "@/lib/item-ingestion";
 
 const upload = {
-  fileName: "123e4567-e89b-42d3-a456-426614174000.jpg",
+  key: "123e4567-e89b-42d3-a456-426614174000.jpg",
   size: 3,
   type: "image/jpeg" as const,
-  url: "/uploads/123e4567-e89b-42d3-a456-426614174000.jpg",
+  url: "/api/images/123e4567-e89b-42d3-a456-426614174000.jpg",
 };
 
 const attributes = {
@@ -95,9 +95,7 @@ describe("ingestWardrobeItem", () => {
       ingestWardrobeItem(imageFile(), createdItem.userId),
     ).rejects.toThrow("vision unavailable");
 
-    expect(ingestionMocks.deleteStoredImage).toHaveBeenCalledWith(
-      upload.fileName,
-    );
+    expect(ingestionMocks.deleteStoredImage).toHaveBeenCalledWith(upload.key);
     expect(ingestionMocks.insert).not.toHaveBeenCalled();
   });
 
@@ -110,8 +108,6 @@ describe("ingestWardrobeItem", () => {
       ingestWardrobeItem(imageFile(), createdItem.userId),
     ).rejects.toThrow("database unavailable");
 
-    expect(ingestionMocks.deleteStoredImage).toHaveBeenCalledWith(
-      upload.fileName,
-    );
+    expect(ingestionMocks.deleteStoredImage).toHaveBeenCalledWith(upload.key);
   });
 });
