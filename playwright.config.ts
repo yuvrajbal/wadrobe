@@ -15,7 +15,12 @@ export default defineConfig({
   projects: [
     {
       name: "chromium",
+      testIgnore: /mobile-audit\.spec\.ts/,
       use: { ...devices["Desktop Chrome"] },
+    },
+    {
+      name: "mobile-chrome",
+      use: { ...devices["Pixel 7"] },
     },
   ],
   webServer: {
