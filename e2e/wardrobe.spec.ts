@@ -33,7 +33,7 @@ test("filters the wardrobe and edits a garment with accessible dialog behavior",
   });
 
   await page.goto("/");
-  await expect(page.getByText("4 pieces · 4 available")).toBeVisible();
+  await expect(page.getByText("4 pieces · 4 ready to wear")).toBeVisible();
 
   const shoesFilter = page.getByRole("button", {
     name: "Shoes",

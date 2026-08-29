@@ -76,18 +76,16 @@ textarea {
 
 @media (prefers-reduced-motion: no-preference) {
   main {
-    animation: page-enter 420ms ease-out both;
+    animation: page-enter 420ms ease-out;
   }
 }
 
 @keyframes page-enter {
   from {
     opacity: 0;
-    transform: translateY(5px);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
   }
 }
 

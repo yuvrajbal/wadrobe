@@ -558,7 +558,7 @@ function ItemPicker({
         role="dialog"
         aria-modal="true"
         aria-label={`Choose ${category}`}
-        className="max-h-[88vh] w-full overflow-y-auto rounded-t-[2rem] bg-[#f7f5ef] shadow-2xl sm:max-w-4xl sm:rounded-[2rem]"
+        className="max-h-[88vh] min-h-0 w-full overflow-y-auto rounded-t-[2rem] bg-[#f7f5ef] shadow-2xl sm:max-w-4xl sm:rounded-[2rem]"
       >
         <div className="sticky top-0 z-10 flex items-center justify-between border-b border-emerald-950/10 bg-[#f7f5ef]/95 px-5 py-4 backdrop-blur sm:px-7">
           <div>

@@ -33,7 +33,7 @@ test("retries the saved-outfit gallery without a full refresh", async ({
     page.getByText("Saved outfits could not be loaded."),
   ).toBeVisible();
   await page.getByRole("button", { name: "Try again" }).click();
-  await expect(page.getByText("3 piece outfit")).toBeVisible();
+  await expect(page.getByText("3-piece outfit")).toBeVisible();
   expect(outfitRequests).toBe(2);
 });
 
@@ -52,11 +52,11 @@ test("keeps the primary journey usable on a phone viewport", async ({
     mobileNavigation.getByRole("link", { name: /Wardrobe/ }),
   ).toHaveAttribute("aria-current", "page");
 
-  await mobileNavigation.getByRole("link", { name: /Suggestions/ }).click();
+  await mobileNavigation.getByRole("link", { name: /Suggest/ }).click();
   await expect(page).toHaveURL(/\/suggestions$/);
   await expect(
     page.locator('nav[aria-label="Primary"]:visible').getByRole("link", {
-      name: /Suggestions/,
+      name: /Suggest/,
     }),
   ).toHaveAttribute("aria-current", "page");
   const hasHorizontalOverflow = await page.evaluate(
