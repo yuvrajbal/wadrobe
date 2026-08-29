@@ -70,6 +70,19 @@ textarea {
   outline-offset: 3px;
 }
 
+/* Keep compact controls comfortable to tap across phone orientations. Inline
+   text links intentionally retain their natural line-box dimensions. */
+@media (max-width: 64rem), (pointer: coarse) {
+  button,
+  a,
+  input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+  select,
+  textarea {
+    min-width: 44px;
+    min-height: 44px;
+  }
+}
+
 :focus-visible {
   outline: 2px solid rgb(199 98 61 / 75%);
 }

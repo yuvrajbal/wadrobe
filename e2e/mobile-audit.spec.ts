@@ -31,6 +31,61 @@ async function expectNoPageOverflow(page: Page) {
     .toBeLessThanOrEqual(1);
 }
 
+async function expectAccessibleTouchTargets(page: Page, surface: string) {
+  const undersized = await page
+    .locator(
+      "header button, header a[href], #main-content button, #main-content a[href], #main-content input:not([type='hidden']), #main-content select, #main-content textarea, nav[aria-label='Primary'] a[href], a[href='#main-content']",
+    )
+    .evaluateAll((elements) => {
+      const minimumSize = 44;
+
+      return elements.flatMap((element) => {
+        const elementStyle = getComputedStyle(element);
+        if (
+          elementStyle.display === "none" ||
+          elementStyle.visibility === "hidden"
+        ) {
+          return [];
+        }
+
+        // Inline text links are exempt from the touch-target guideline.
+        if (
+          element instanceof HTMLAnchorElement &&
+          elementStyle.display === "inline"
+        ) {
+          return [];
+        }
+
+        let target: Element = element;
+        if (
+          element instanceof HTMLInputElement &&
+          ["checkbox", "radio", "file"].includes(element.type)
+        ) {
+          const explicitLabel = element.id
+            ? document.querySelector(`label[for="${CSS.escape(element.id)}"]`)
+            : null;
+          target = element.closest("label") ?? explicitLabel ?? element;
+        }
+
+        const { height, width } = target.getBoundingClientRect();
+        if (height === 0 || width === 0) return [];
+        if (height >= minimumSize && width >= minimumSize) return [];
+
+        const name =
+          element.getAttribute("aria-label") ??
+          element.getAttribute("placeholder") ??
+          element.textContent?.trim().replace(/\s+/g, " ") ??
+          element.tagName.toLowerCase();
+
+        return [
+          `${name || element.tagName.toLowerCase()} (${Math.round(width)}x${Math.round(height)})`,
+        ];
+      });
+    });
+
+  expect(undersized, `${surface} has undersized touch targets`).toEqual([]);
+}
+
 test.beforeEach(async ({ page }) => {
   await mockPrimaryJourneys(page);
 });
@@ -115,6 +170,54 @@ test("keeps garment and item-picker dialogs inside the phone viewport", async ({
   const picker = page.getByRole("dialog", { name: "Choose top" });
   await expect(picker).toBeVisible();
   await expectDialogWithinViewport(page, picker);
+});
+
+test("keeps visible controls at least 44 by 44 CSS pixels", async ({
+  page,
+}) => {
+  await page.route("**/api/suggestions", async (route) => {
+    await route.fulfill({
+      json: {
+        suggestions: [
+          {
+            itemIds: ["top-1", "bottom-1", "shoes-1"],
+            rationale: "A comfortable, polished mobile look.",
+          },
+        ],
+      },
+    });
+  });
+
+  await page.goto("/");
+  await expect(page.getByText("Your collection")).toBeVisible();
+  await expectAccessibleTouchTargets(page, "wardrobe");
+  await page
+    .getByRole("button", { name: new RegExp(wardrobeItems[0].name) })
+    .click();
+  await expect(
+    page.getByRole("dialog", { name: "Garment details" }),
+  ).toBeVisible();
+  await expectAccessibleTouchTargets(page, "garment dialog");
+  await page.getByRole("button", { name: "Close dialog" }).click();
+
+  await page.goto("/builder?items=top-1%2Cbottom-1%2Cshoes-1");
+  await expect(page.getByText("3 of 5 slots filled")).toBeVisible();
+  await expectAccessibleTouchTargets(page, "outfit builder");
+  await page.getByRole("button", { name: "Replace" }).first().click();
+  await expect(page.getByRole("dialog", { name: "Choose top" })).toBeVisible();
+  await expectAccessibleTouchTargets(page, "item picker");
+
+  await page.goto("/suggestions");
+  await page.getByLabel("Temperature").fill("68");
+  await page.getByRole("button", { name: "Suggest outfits" }).click();
+  await expect(
+    page.getByRole("button", { name: "Save", exact: true }),
+  ).toBeVisible();
+  await expectAccessibleTouchTargets(page, "suggestions");
+
+  await page.goto("/saved");
+  await expect(page.getByRole("link", { name: "Edit look" })).toBeVisible();
+  await expectAccessibleTouchTargets(page, "saved outfits");
 });
 
 async function expectDialogWithinViewport(

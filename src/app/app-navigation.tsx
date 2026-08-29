@@ -17,7 +17,7 @@ export function AppNavigation({ children }: { children: React.ReactNode }) {
     <>
       <a
         href="#main-content"
-        className="fixed top-3 left-3 z-[60] -translate-y-20 rounded-full bg-emerald-950 px-4 py-2 text-sm font-semibold text-white transition focus:translate-y-0"
+        className="fixed top-3 left-3 z-[60] inline-flex min-h-11 -translate-y-20 items-center rounded-full bg-emerald-950 px-4 py-2 text-sm font-semibold text-white transition focus:translate-y-0"
       >
         Skip to content
       </a>
@@ -25,7 +25,7 @@ export function AppNavigation({ children }: { children: React.ReactNode }) {
         <div className="mx-auto flex min-h-[4.5rem] w-full max-w-7xl items-center justify-between gap-6 px-5 sm:px-8">
           <Link
             href="/"
-            className="group flex items-center gap-3 rounded-xl"
+            className="group flex min-h-11 items-center gap-3 rounded-xl"
             aria-label="Wadrobe home"
           >
             <span className="display-type grid h-10 w-10 place-items-center rounded-[0.9rem] bg-emerald-950 text-lg text-[#f7f5ef] shadow-[0_8px_24px_-12px_rgba(6,78,59,0.8)] transition group-hover:-rotate-3">
