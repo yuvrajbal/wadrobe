@@ -1,9 +1,16 @@
 # Shared persistence migration
 
-This runbook moves one or more existing Wadrobe installations into a shared
-Neon Postgres database and a private Cloudflare R2 bucket. It is designed to be
-rerunnable: identical UUIDs are skipped, conflicting UUIDs stop the migration,
-and existing destination-only rows are preserved.
+This runbook moves one or more legacy Wadrobe installations whose database image
+references use `/uploads/...` into a shared Neon Postgres database and a private
+Cloudflare R2 bucket. It is designed to be rerunnable: identical UUIDs are
+skipped, conflicting UUIDs stop the migration, and existing destination-only
+rows are preserved.
+
+The migration command copies only legacy `/uploads/...` images from
+`SOURCE_UPLOAD_DIR`. It does not copy objects from a modern local-storage
+installation whose database already contains `/api/images/...` references. Move
+that storage separately or extend the migration tool before cutting over such an
+installation.
 
 ## 1. Provision and back up
 
@@ -18,8 +25,8 @@ and existing destination-only rows are preserved.
 3. Create an R2 bucket and leave public access disabled. Create an Object Read &
    Write S3 API token restricted to this bucket. Do not use an account-wide admin
    token.
-4. Stop writes to the MacBook and home-server instances. Back up every source
-   before changing the destination:
+4. Stop writes to the MacBook and home-server instances. Back up every legacy
+   source before changing the destination:
 
    ```bash
    pg_dump --format=custom --file=wadrobe-before-cloud.dump "$SOURCE_DATABASE_URL"
@@ -65,7 +72,7 @@ that corresponds to the old `/uploads/` URL prefix.
 ```dotenv
 SOURCE_DATABASE_URL=postgresql://wardrobe:wardrobe@localhost:5432/wardrobe
 SOURCE_DATABASE_SSL=disable
-SOURCE_UPLOAD_DIR=/absolute/path/to/wadrobe/public/uploads
+SOURCE_UPLOAD_DIR=/absolute/path/to/legacy/wadrobe/public/uploads
 ```
 
 Run without `MIGRATION_APPLY` first:
