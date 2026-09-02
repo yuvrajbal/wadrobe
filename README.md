@@ -1,9 +1,10 @@
 # Wadrobe
 
-Phase 3 of a phone-first AI wardrobe recommendation app. Wardrobe ingestion,
-manual outfit building, structured critique, and context-aware outfit
-recommendations are complete. Recommendations account for occasion, current or
-manual weather, walking level, style direction, and recent save/reject feedback.
+Wadrobe is a feature-complete, phone-first AI wardrobe recommendation MVP.
+Wardrobe ingestion, manual outfit building, structured critique, context-aware
+recommendations, saved outfits, and feedback-based personalization are
+implemented. Recommendations account for occasion, current or manual weather,
+walking level, style direction, and recent save/reject feedback.
 
 ## Requirements
 
@@ -71,7 +72,7 @@ curl -F "file=@./shirt.png" http://localhost:3000/api/items
 
 The vision response is an editable draft containing a name, category, colors,
 pattern, formality, seasons, material, and fit. The request uses Structured
-Outputs and does not store the model response at OpenAI.
+Outputs and explicitly sets `store: false`.
 
 ## Wardrobe item management
 
@@ -146,7 +147,13 @@ the temperature field remains manually editable.
 - Phase 2 — manual outfit builder: complete
 - Phase 3 — context-aware suggestions: complete
 - Phase 4 — saved-outfit personalization: complete
-- Phase 5 — polish: planned
+- Phase 5 — loading/error states, empty states, and responsive layout: complete
+
+The optional analytics surface from task 19 of the project specification is not
+implemented. It is not required for the MVP. Remaining non-blocking mobile
+follow-ups are documented in [the mobile browser audit](docs/mobile-browser-audit.md):
+some compact secondary controls remain below the 44 x 44 CSS px touch-target
+guideline, and Safari/iOS has not been verified on physical hardware.
 
 ## Useful commands
 

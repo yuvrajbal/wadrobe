@@ -1,5 +1,12 @@
 # AI Wardrobe Recommendation App — Project Specification
 
+> **Implementation status (August 2026):** Required tasks 1–18 and 20–22 are
+> implemented. Task 19, the optional analytics surface, is not implemented and
+> is not required for the MVP. The remaining non-blocking mobile follow-ups are
+> smaller secondary touch targets and physical Safari/iOS verification; see
+> [the mobile browser audit](docs/mobile-browser-audit.md). API paths below
+> reflect the implemented routes.
+
 ## 1. Overview
 
 A personal wardrobe app where a user photographs their clothing, and an AI suggests outfits based on occasion, weather, and personal style. The app learns from which outfits the user saves and rejects.
@@ -66,12 +73,13 @@ Send the user's **available** items as a compact JSON array of `{id, category, c
 1. Initialize repo, frontend + backend scaffolding, linting/formatting.
 2. Set up database and run migrations for `items` and `outfits` tables.
 3. Configure environment variables and the OpenAI API client (key handled server-side only — never exposed to the frontend).
-4. Implement image upload endpoint (store file, return URL).
+4. Implement image upload endpoint (`POST /api/uploads`; store file, return a
+   stable app URL).
 
 ### Phase 1 — Wardrobe (Screen 1)
 
-5. Build `POST /items` endpoint: accept image, call the vision model for attribute extraction, persist item.
-6. Build `GET /items` (filter by category, availability) and `PATCH /items/:id` (edit tags, notes, availability) and `DELETE /items/:id`.
+5. Build `POST /api/items` endpoint: accept image, call the vision model for attribute extraction, persist item.
+6. Build `GET /api/items` (filter by category, availability) and `PATCH /api/items/:id` (edit tags, notes, availability) and `DELETE /api/items/:id`.
 7. Build the wardrobe grid UI: tabs/filter by category (Tops, Bottoms, Shoes, Outerwear), item cards showing image + name + tags.
 8. Add item detail/edit modal so users can correct AI-generated tags and toggle availability.
 
@@ -79,19 +87,19 @@ Send the user's **available** items as a compact JSON array of `{id, category, c
 
 9. Build the manual builder UI: slots for top, bottom, shoes, outerwear; tapping a slot opens a picker filtered to that category and to available items.
 10. Render the selected items as a clean outfit board.
-11. Implement "Replace one item" (re-open picker for that slot) and "Save outfit" (`POST /outfits` with `source: manual`, `status: saved`).
+11. Implement "Replace one item" (re-open picker for that slot) and "Save outfit" (`POST /api/outfits` with `source: manual`, `status: saved`).
 12. Implement "Critique this outfit": send the current combination to the model, return a short text assessment. (This replaces the vague "Ask AI" button.)
 
 ### Phase 3 — Suggestions (Screen 3)
 
 13. Build the request form: occasion, temperature (auto-fill from geolocation + a weather API, with manual override), walking level, style.
-14. Build `POST /suggest`: assemble compact JSON of available items + context + recent feedback summary, call the text model, parse 3 outfit suggestions.
+14. Build `POST /api/suggestions`: assemble compact JSON of available items + context + recent feedback summary, call the text model, parse up to 3 outfit suggestions.
 15. Render suggestions as outfit boards, each with its rationale.
 16. Add per-suggestion actions: Save (`status: saved`), Reject (`status: rejected`), or open in the builder to tweak.
 
 ### Phase 4 — Saved Outfits & Personalization (Screen 4)
 
-17. Build `GET /outfits?status=saved` and the saved-outfits gallery.
+17. Build `GET /api/outfits?status=saved` and the saved-outfits gallery.
 18. Compute a lightweight personalization summary: most-used items, preferred colors/formality, recent saves and rejections. Feed this summary into every recommendation call.
 19. Add basic analytics surface (optional): most-worn items, gaps in the wardrobe.
 
