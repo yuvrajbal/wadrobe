@@ -11,6 +11,8 @@ import {
   useState,
 } from "react";
 
+import { notifications, safeNotificationMessage } from "@/lib/notifications";
+
 const categories = [
   { label: "All", value: "all" },
   { label: "Tops", value: "top" },
@@ -120,13 +122,19 @@ export function WardrobeApp() {
       const body = (await response.json()) as { items: WardrobeItem[] };
       setItems(body.items);
       setLoadState("ready");
+      notifications.dismiss("wardrobe-load");
     } catch (error) {
-      setLoadError(
-        error instanceof Error
-          ? error.message
-          : "Your wardrobe could not be loaded.",
+      const message = safeNotificationMessage(
+        error instanceof Error ? error.message : null,
+        "Your wardrobe could not be loaded.",
       );
+      setLoadError(message);
       setLoadState("error");
+      notifications.error({
+        id: "wardrobe-load",
+        title: "Couldn’t refresh your wardrobe.",
+        description: message,
+      });
     }
   }, []);
 
@@ -200,12 +208,21 @@ export function WardrobeApp() {
       }
 
       clearPendingUpload();
+      notifications.success({
+        id: "wardrobe-upload",
+        title: "Garment added to your wardrobe.",
+      });
     } catch (error) {
-      setUploadError(
-        error instanceof Error
-          ? error.message
-          : "The garment could not be analyzed.",
+      const message = safeNotificationMessage(
+        error instanceof Error ? error.message : null,
+        "The garment could not be analyzed. Try another photo.",
       );
+      setUploadError(message);
+      notifications.error({
+        id: "wardrobe-upload",
+        title: "The garment could not be added.",
+        description: message,
+      });
     } finally {
       setIsUploading(false);
     }
@@ -831,12 +848,21 @@ function ItemDialog({
       const body = (await response.json()) as { item: WardrobeItem };
       onUpdate(body.item);
       onClose();
+      notifications.success({
+        id: `wardrobe-edit-${item.id}`,
+        title: "Garment details saved.",
+      });
     } catch (saveError) {
-      setError(
-        saveError instanceof Error
-          ? saveError.message
-          : "The item could not be saved.",
+      const message = safeNotificationMessage(
+        saveError instanceof Error ? saveError.message : null,
+        "The item could not be saved. Please try again.",
       );
+      setError(message);
+      notifications.error({
+        id: `wardrobe-edit-${item.id}`,
+        title: "The garment could not be saved.",
+        description: message,
+      });
     } finally {
       setIsSaving(false);
     }
@@ -858,12 +884,21 @@ function ItemDialog({
       }
 
       onDelete(item.id);
+      notifications.success({
+        id: `wardrobe-delete-${item.id}`,
+        title: "Garment deleted.",
+      });
     } catch (deleteError) {
-      setError(
-        deleteError instanceof Error
-          ? deleteError.message
-          : "The item could not be deleted.",
+      const message = safeNotificationMessage(
+        deleteError instanceof Error ? deleteError.message : null,
+        "The item could not be deleted. Please try again.",
       );
+      setError(message);
+      notifications.error({
+        id: `wardrobe-delete-${item.id}`,
+        title: "The garment could not be deleted.",
+        description: message,
+      });
       setIsDeleting(false);
       setConfirmDelete(false);
     }

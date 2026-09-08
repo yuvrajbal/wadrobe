@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import { AppNavigation } from "@/app/app-navigation";
+import { NotificationProvider } from "@/components/notification-provider";
 
 import "./globals.css";
 
@@ -21,6 +22,7 @@ export default function RootLayout({
     <html lang="en">
       <body>
         <AppNavigation>{children}</AppNavigation>
+        <NotificationProvider />
       </body>
     </html>
   );
