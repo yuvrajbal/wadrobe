@@ -4,6 +4,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
+import { notifications, safeNotificationMessage } from "@/lib/notifications";
+
 type Category = "top" | "bottom" | "shoes" | "outerwear" | "accessory";
 
 type WardrobeItem = {
@@ -110,13 +112,19 @@ export function OutfitBuilder({
         });
       }
       setLoadState("ready");
+      notifications.dismiss("builder-wardrobe-load");
     } catch (error) {
-      setLoadError(
-        error instanceof Error
-          ? error.message
-          : "Your wardrobe could not be loaded.",
+      const message = safeNotificationMessage(
+        error instanceof Error ? error.message : null,
+        "Your wardrobe could not be loaded.",
       );
+      setLoadError(message);
       setLoadState("error");
+      notifications.error({
+        id: "builder-wardrobe-load",
+        title: "The outfit builder could not load your wardrobe.",
+        description: message,
+      });
     }
   }, [initialItemIds]);
 
@@ -187,13 +195,22 @@ export function OutfitBuilder({
       }
       setSaveState("success");
       setSaveMessage("Outfit saved to your collection.");
+      notifications.success({
+        id: "outfit-save",
+        title: "Outfit saved to your collection.",
+      });
     } catch (error) {
-      setSaveState("error");
-      setSaveMessage(
-        error instanceof Error
-          ? error.message
-          : "The outfit could not be saved.",
+      const message = safeNotificationMessage(
+        error instanceof Error ? error.message : null,
+        "The outfit could not be saved. Please try again.",
       );
+      setSaveState("error");
+      setSaveMessage(message);
+      notifications.error({
+        id: "outfit-save",
+        title: "The outfit could not be saved.",
+        description: message,
+      });
     }
   }
 
@@ -224,12 +241,17 @@ export function OutfitBuilder({
       setCritique(body.critique);
       setCritiqueState("success");
     } catch (error) {
-      setCritiqueError(
-        error instanceof Error
-          ? error.message
-          : "The outfit could not be critiqued.",
+      const message = safeNotificationMessage(
+        error instanceof Error ? error.message : null,
+        "The outfit could not be critiqued. Please try again.",
       );
+      setCritiqueError(message);
       setCritiqueState("error");
+      notifications.error({
+        id: "outfit-critique",
+        title: "The critique could not be created.",
+        description: message,
+      });
     }
   }
 
@@ -367,25 +389,22 @@ export function OutfitBuilder({
                 </button>
               </div>
 
-              {saveMessage ? (
+              {saveMessage && saveState === "error" ? (
                 <div
-                  role="status"
-                  className={`mt-4 rounded-2xl px-4 py-3 text-sm ${
-                    saveState === "success"
-                      ? "bg-emerald-700/50 text-emerald-50"
-                      : "bg-red-950/55 text-red-50"
-                  }`}
+                  role="alert"
+                  className="mt-4 rounded-2xl bg-red-950/55 px-4 py-3 text-sm text-red-50"
                 >
                   {saveMessage}
-                  {saveState === "success" ? (
-                    <Link
-                      href="/saved"
-                      className="ml-2 font-semibold underline"
-                    >
-                      View saved
-                    </Link>
-                  ) : null}
                 </div>
+              ) : null}
+
+              {saveState === "success" ? (
+                <Link
+                  href="/saved"
+                  className="mt-4 inline-flex text-sm font-semibold text-emerald-100 underline"
+                >
+                  View saved outfits
+                </Link>
               ) : null}
 
               {critique ? <CritiqueCard critique={critique} /> : null}

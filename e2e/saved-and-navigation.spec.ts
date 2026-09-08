@@ -32,8 +32,18 @@ test("retries the saved-outfit gallery without a full refresh", async ({
   await expect(
     page.getByText("Saved outfits could not be loaded."),
   ).toBeVisible();
+  await expect(
+    page
+      .getByLabel(/Notifications/)
+      .getByText("Couldn’t refresh your saved collection."),
+  ).toBeVisible();
   await page.getByRole("button", { name: "Try again" }).click();
   await expect(page.getByText("3-piece outfit")).toBeVisible();
+  await expect(
+    page
+      .getByLabel(/Notifications/)
+      .getByText("Couldn’t refresh your saved collection."),
+  ).toBeHidden();
   expect(outfitRequests).toBe(2);
 });
 

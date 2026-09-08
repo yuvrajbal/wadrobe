@@ -10,6 +10,8 @@ import {
   useState,
 } from "react";
 
+import { notifications, safeNotificationMessage } from "@/lib/notifications";
+
 type Category = "top" | "bottom" | "shoes" | "outerwear" | "accessory";
 type WardrobeItem = {
   id: string;
@@ -76,8 +78,14 @@ export function OutfitSuggestions() {
       const body = (await response.json()) as { items: WardrobeItem[] };
       setItems(body.items);
       setItemsState("ready");
+      notifications.dismiss("suggestions-wardrobe-load");
     } catch {
       setItemsState("error");
+      notifications.error({
+        id: "suggestions-wardrobe-load",
+        title: "Couldn’t prepare outfit suggestions.",
+        description: "Try again without losing the details you entered.",
+      });
     }
   }, []);
 
@@ -100,9 +108,14 @@ export function OutfitSuggestions() {
 
     if (!("geolocation" in navigator)) {
       setWeatherState("error");
-      setWeatherMessage(
-        "Location is not supported. Enter a temperature manually.",
-      );
+      const message =
+        "Location is not supported. Enter a temperature manually.";
+      setWeatherMessage(message);
+      notifications.warning({
+        id: "local-weather",
+        title: "Local weather is unavailable.",
+        description: message,
+      });
       return;
     }
 
@@ -125,21 +138,35 @@ export function OutfitSuggestions() {
           const body = (await response.json()) as { temperature: number };
           setTemperature(String(body.temperature));
           setWeatherState("success");
-          setWeatherMessage(`Local weather added: ${body.temperature}°F.`);
+          setWeatherMessage("");
+          notifications.success({
+            id: "local-weather",
+            title: `Local weather added: ${body.temperature}°F.`,
+          });
         } catch (error) {
-          setWeatherState("error");
-          setWeatherMessage(
-            error instanceof Error
-              ? error.message
-              : "Local weather could not be loaded.",
+          const message = safeNotificationMessage(
+            error instanceof Error ? error.message : null,
+            "Local weather could not be loaded. Enter it manually.",
           );
+          setWeatherState("error");
+          setWeatherMessage(message);
+          notifications.error({
+            id: "local-weather",
+            title: "Local weather could not be loaded.",
+            description: message,
+          });
         }
       },
       () => {
         setWeatherState("error");
-        setWeatherMessage(
-          "Location permission was unavailable. Enter it manually.",
-        );
+        const message =
+          "Location permission was unavailable. Enter it manually.";
+        setWeatherMessage(message);
+        notifications.warning({
+          id: "local-weather",
+          title: "Location access is unavailable.",
+          description: message,
+        });
       },
       { enableHighAccuracy: false, timeout: 10_000, maximumAge: 15 * 60_000 },
     );
@@ -188,12 +215,17 @@ export function OutfitSuggestions() {
       setSubmittedContext(context);
       setRequestState("success");
     } catch (error) {
-      setRequestState("error");
-      setRequestError(
-        error instanceof Error
-          ? error.message
-          : "Suggestions could not be created.",
+      const message = safeNotificationMessage(
+        error instanceof Error ? error.message : null,
+        "Suggestions could not be created. Please try again.",
       );
+      setRequestState("error");
+      setRequestError(message);
+      notifications.error({
+        id: "outfit-suggestions",
+        title: "Couldn’t build outfit suggestions.",
+        description: message,
+      });
     }
   }
 
@@ -222,15 +254,28 @@ export function OutfitSuggestions() {
         );
       }
       setDecisions((current) => ({ ...current, [key]: status }));
+      notifications.success({
+        id: `suggestion-feedback-${key}`,
+        title:
+          status === "saved"
+            ? "Look saved to your collection."
+            : "Preference noted for future suggestions.",
+      });
     } catch (error) {
+      const message = safeNotificationMessage(
+        error instanceof Error ? error.message : null,
+        "Your choice could not be saved. Please try again.",
+      );
       setDecisions((current) => ({ ...current, [key]: "error" }));
       setDecisionErrors((current) => ({
         ...current,
-        [key]:
-          error instanceof Error
-            ? error.message
-            : "Your choice could not be saved.",
+        [key]: message,
       }));
+      notifications.error({
+        id: `suggestion-feedback-${key}`,
+        title: "Your choice could not be saved.",
+        description: message,
+      });
     }
   }
 

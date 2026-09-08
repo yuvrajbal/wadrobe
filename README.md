@@ -168,6 +168,10 @@ The Playwright suite starts the app on port 3100 and uses deterministic API
 responses, so it does not require Postgres or an OpenAI key. Install Chromium
 once with `npm run test:e2e:install` before running it locally.
 
+Action feedback uses one accessible global toast viewport and a typed adapter.
+See [the notification conventions](docs/notifications.md) before adding or
+changing user-facing notifications.
+
 Only server modules read `OPENAI_API_KEY`, `DATABASE_URL`, and storage
 credentials; never create `NEXT_PUBLIC_` variants. `DATABASE_SSL` defaults to
 `require`; only the local Docker database should set it to `disable`.

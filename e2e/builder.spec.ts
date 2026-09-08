@@ -58,5 +58,10 @@ test("builds, critiques, and saves a complete outfit", async ({ page }) => {
   await expect(
     page.getByText("Outfit saved to your collection."),
   ).toBeVisible();
+  await expect(
+    page
+      .getByLabel(/Notifications/)
+      .getByText("Outfit saved to your collection."),
+  ).toBeVisible();
   expect(savedItemIds).toEqual(["top-1", "bottom-1", "shoes-1"]);
 });

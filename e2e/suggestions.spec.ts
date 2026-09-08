@@ -37,12 +37,22 @@ test("recovers wardrobe loading and carries a suggestion into the builder", asyn
     page.getByText("Your wardrobe could not be loaded."),
   ).toBeVisible();
   await expect(
+    page
+      .getByLabel(/Notifications/)
+      .getByText("Couldn’t prepare outfit suggestions."),
+  ).toBeVisible();
+  await expect(
     page.getByRole("button", { name: "Suggest outfits" }),
   ).toBeDisabled();
 
   await page.getByLabel("Occasion").fill("museum afternoon");
   await page.getByRole("button", { name: "Try again" }).click();
   await expect(page.getByText("Your wardrobe is ready to work.")).toBeVisible();
+  await expect(
+    page
+      .getByLabel(/Notifications/)
+      .getByText("Couldn’t prepare outfit suggestions."),
+  ).toBeHidden();
   await page.getByRole("button", { name: "high" }).click();
   await expect(page.getByRole("button", { name: "high" })).toHaveAttribute(
     "aria-pressed",

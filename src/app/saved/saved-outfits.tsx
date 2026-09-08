@@ -4,6 +4,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 
+import { notifications } from "@/lib/notifications";
+
 type WardrobeItem = { id: string; imageUrl: string; name: string };
 type Outfit = { id: string; itemIds: string[]; createdAt: string };
 
@@ -29,8 +31,14 @@ export function SavedOutfits() {
       setOutfits(outfitBody.outfits);
       setItems(itemBody.items);
       setState("ready");
+      notifications.dismiss("saved-outfits-load");
     } catch {
       setState("error");
+      notifications.error({
+        id: "saved-outfits-load",
+        title: "Couldn’t refresh your saved collection.",
+        description: "Try again in a moment.",
+      });
     }
   }, []);
 
