@@ -1,5 +1,9 @@
 import { randomUUID } from "node:crypto";
 
+import { and, eq } from "drizzle-orm";
+
+import { getDatabase } from "@/lib/db";
+import { imageObjects } from "@/lib/db/schema";
 import {
   getImageStorage,
   imageObjectKeyPattern,
@@ -100,14 +104,25 @@ export async function validateImageFile(
   return mimeType;
 }
 
-export async function storeImage(file: File): Promise<StoredImage> {
+export async function storeImage(
+  file: File,
+  userId: string,
+): Promise<StoredImage> {
   const type = await validateImageFile(file);
   const key = `${randomUUID()}.${extensionsByMimeType[type]}`;
-  await getImageStorage().put(
-    key,
-    new Uint8Array(await file.arrayBuffer()),
-    type,
-  );
+  const storage = getImageStorage();
+  await storage.put(key, new Uint8Array(await file.arrayBuffer()), type);
+
+  try {
+    await getDatabase().insert(imageObjects).values({ key, userId });
+  } catch (error) {
+    try {
+      await storage.delete(key);
+    } catch (cleanupError) {
+      console.error("Failed to clean up unowned image", cleanupError);
+    }
+    throw error;
+  }
 
   return {
     key,
@@ -119,10 +134,36 @@ export async function storeImage(file: File): Promise<StoredImage> {
 
 export async function readStoredImage(
   key: string,
+  userId: string,
 ): Promise<StoredObject | null> {
+  if (!imageObjectKeyPattern.test(key)) {
+    throw new Error("Refusing to access an invalid image object key.");
+  }
+
+  const [ownedImage] = await getDatabase()
+    .select({ key: imageObjects.key })
+    .from(imageObjects)
+    .where(and(eq(imageObjects.key, key), eq(imageObjects.userId, userId)))
+    .limit(1);
+
+  if (!ownedImage) return null;
   return getImageStorage().get(key);
 }
 
-export async function deleteStoredImage(key: string): Promise<void> {
+export async function deleteStoredImage(
+  key: string,
+  userId: string,
+): Promise<void> {
+  const [ownedImage] = await getDatabase()
+    .select({ key: imageObjects.key })
+    .from(imageObjects)
+    .where(and(eq(imageObjects.key, key), eq(imageObjects.userId, userId)))
+    .limit(1);
+
+  if (!ownedImage) return;
+
   await getImageStorage().delete(key);
+  await getDatabase()
+    .delete(imageObjects)
+    .where(and(eq(imageObjects.key, key), eq(imageObjects.userId, userId)));
 }

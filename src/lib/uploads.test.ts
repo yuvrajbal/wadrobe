@@ -5,12 +5,29 @@ const storageMocks = vi.hoisted(() => ({
   get: vi.fn(),
   put: vi.fn(),
 }));
+const databaseMocks = vi.hoisted(() => ({
+  delete: vi.fn(),
+  deleteWhere: vi.fn(),
+  from: vi.fn(),
+  insert: vi.fn(),
+  limit: vi.fn(),
+  select: vi.fn(),
+  selectWhere: vi.fn(),
+  values: vi.fn(),
+}));
 
 vi.mock("server-only", () => ({}));
 vi.mock("@/lib/image-storage", () => ({
   getImageStorage: () => storageMocks,
   imageObjectKeyPattern:
     /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.(jpg|png|webp|svg)$/i,
+}));
+vi.mock("@/lib/db", () => ({
+  getDatabase: () => ({
+    delete: databaseMocks.delete,
+    insert: databaseMocks.insert,
+    select: databaseMocks.select,
+  }),
 }));
 
 import {
@@ -24,7 +41,15 @@ import {
 } from "@/lib/uploads";
 
 describe("stored image references", () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => {
+    vi.clearAllMocks();
+    databaseMocks.insert.mockReturnValue({ values: databaseMocks.values });
+    databaseMocks.select.mockReturnValue({ from: databaseMocks.from });
+    databaseMocks.from.mockReturnValue({ where: databaseMocks.selectWhere });
+    databaseMocks.selectWhere.mockReturnValue({ limit: databaseMocks.limit });
+    databaseMocks.limit.mockResolvedValue([{ key: "owned" }]);
+    databaseMocks.delete.mockReturnValue({ where: databaseMocks.deleteWhere });
+  });
 
   it("extracts only generated object keys", () => {
     expect(
@@ -38,6 +63,7 @@ describe("stored image references", () => {
   });
 
   it("stores, retrieves, and deletes through the configured adapter", async () => {
+    const userId = "123e4567-e89b-42d3-a456-426614174000";
     const file = new File([new Uint8Array([0xff, 0xd8, 0xff])], "shirt.jpg", {
       type: "image/jpeg",
     });
@@ -48,7 +74,7 @@ describe("stored image references", () => {
     };
     storageMocks.get.mockResolvedValue(storedObject);
 
-    const upload = await storeImage(file);
+    const upload = await storeImage(file, userId);
     expect(upload.url).toBe(`/api/images/${upload.key}`);
     expect(storageMocks.put).toHaveBeenCalledWith(
       upload.key,
@@ -56,9 +82,27 @@ describe("stored image references", () => {
       "image/jpeg",
     );
 
-    await expect(readStoredImage(upload.key)).resolves.toEqual(storedObject);
-    await deleteStoredImage(upload.key);
+    expect(databaseMocks.values).toHaveBeenCalledWith({
+      key: upload.key,
+      userId,
+    });
+    await expect(readStoredImage(upload.key, userId)).resolves.toEqual(
+      storedObject,
+    );
+    await deleteStoredImage(upload.key, userId);
     expect(storageMocks.delete).toHaveBeenCalledWith(upload.key);
+  });
+
+  it("does not reveal an image that is not owned by the current user", async () => {
+    databaseMocks.limit.mockResolvedValue([]);
+
+    await expect(
+      readStoredImage(
+        "123e4567-e89b-42d3-a456-426614174000.jpg",
+        "223e4567-e89b-42d3-a456-426614174000",
+      ),
+    ).resolves.toBeNull();
+    expect(storageMocks.get).not.toHaveBeenCalled();
   });
 });
 

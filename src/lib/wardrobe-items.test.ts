@@ -8,6 +8,7 @@ const itemMocks = vi.hoisted(() => ({
   getStoredImageKey: vi.fn(),
   insert: vi.fn(),
   listFrom: vi.fn(),
+  listLimit: vi.fn(),
   listOrderBy: vi.fn(),
   listWhere: vi.fn(),
   select: vi.fn(),
@@ -35,6 +36,7 @@ import {
   deleteWardrobeItem,
   listWardrobeItems,
   updateWardrobeItem,
+  userOwnsWardrobeImage,
 } from "@/lib/wardrobe-items";
 
 const userId = "00000000-0000-4000-8000-000000000001";
@@ -61,7 +63,11 @@ describe("wardrobe item persistence", () => {
 
     itemMocks.select.mockReturnValue({ from: itemMocks.listFrom });
     itemMocks.listFrom.mockReturnValue({ where: itemMocks.listWhere });
-    itemMocks.listWhere.mockReturnValue({ orderBy: itemMocks.listOrderBy });
+    itemMocks.listWhere.mockReturnValue({
+      limit: itemMocks.listLimit,
+      orderBy: itemMocks.listOrderBy,
+    });
+    itemMocks.listLimit.mockResolvedValue([item]);
     itemMocks.listOrderBy.mockResolvedValue([item]);
 
     itemMocks.update.mockReturnValue({ set: itemMocks.updateSet });
@@ -97,11 +103,26 @@ describe("wardrobe item persistence", () => {
     expect(itemMocks.updateSet).toHaveBeenCalledWith({ notes: "favorite" });
   });
 
+  it("authorizes only a current-user legacy image URL", async () => {
+    await expect(userOwnsWardrobeImage(userId, item.imageUrl)).resolves.toBe(
+      true,
+    );
+
+    itemMocks.listLimit.mockResolvedValue([]);
+    await expect(
+      userOwnsWardrobeImage(
+        "323e4567-e89b-42d3-a456-426614174000",
+        item.imageUrl,
+      ),
+    ).resolves.toBe(false);
+  });
+
   it("deletes the row and its stored image", async () => {
     await expect(deleteWardrobeItem(item.id, userId)).resolves.toEqual(item);
 
     expect(itemMocks.deleteStoredImage).toHaveBeenCalledWith(
       "123e4567-e89b-42d3-a456-426614174000.jpg",
+      userId,
     );
   });
 

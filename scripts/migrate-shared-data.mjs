@@ -287,6 +287,26 @@ try {
           )
           on conflict (id) do update set image_url = excluded.image_url
         `;
+
+        const imageKey = imageUrl.startsWith("/api/images/")
+          ? imageUrl.slice("/api/images/".length)
+          : null;
+        if (imageKey) {
+          await transaction`
+            insert into image_objects (key, user_id)
+            values (${imageKey}, ${item.userId})
+            on conflict (key) do nothing
+          `;
+
+          const [owner] = await transaction`
+            select user_id as "userId"
+            from image_objects
+            where key = ${imageKey}
+          `;
+          if (owner?.userId !== item.userId) {
+            throw new Error(`Image ownership conflict for object ${imageKey}.`);
+          }
+        }
       }
 
       for (const outfit of sourceOutfits) {

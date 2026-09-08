@@ -28,6 +28,19 @@ export async function listWardrobeItems(
     .orderBy(desc(items.createdAt));
 }
 
+export async function userOwnsWardrobeImage(
+  userId: string,
+  imageUrl: string,
+): Promise<boolean> {
+  const [item] = await getDatabase()
+    .select({ id: items.id })
+    .from(items)
+    .where(and(eq(items.userId, userId), eq(items.imageUrl, imageUrl)))
+    .limit(1);
+
+  return Boolean(item);
+}
+
 export async function updateWardrobeItem(
   id: string,
   userId: string,
@@ -59,7 +72,7 @@ export async function deleteWardrobeItem(
 
   if (imageKey) {
     try {
-      await deleteStoredImage(imageKey);
+      await deleteStoredImage(imageKey, userId);
     } catch (error) {
       // The database deletion is authoritative. A storage failure should not
       // make a successful delete look retryable and produce a later 404.

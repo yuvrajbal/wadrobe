@@ -73,7 +73,10 @@ describe("ingestWardrobeItem", () => {
       createdItem,
     );
 
-    expect(ingestionMocks.storeImage).toHaveBeenCalledWith(file);
+    expect(ingestionMocks.storeImage).toHaveBeenCalledWith(
+      file,
+      createdItem.userId,
+    );
     expect(ingestionMocks.analyzeWardrobeItem).toHaveBeenCalledWith(
       file,
       "image/jpeg",
@@ -95,7 +98,10 @@ describe("ingestWardrobeItem", () => {
       ingestWardrobeItem(imageFile(), createdItem.userId),
     ).rejects.toThrow("vision unavailable");
 
-    expect(ingestionMocks.deleteStoredImage).toHaveBeenCalledWith(upload.key);
+    expect(ingestionMocks.deleteStoredImage).toHaveBeenCalledWith(
+      upload.key,
+      createdItem.userId,
+    );
     expect(ingestionMocks.insert).not.toHaveBeenCalled();
   });
 
@@ -108,6 +114,9 @@ describe("ingestWardrobeItem", () => {
       ingestWardrobeItem(imageFile(), createdItem.userId),
     ).rejects.toThrow("database unavailable");
 
-    expect(ingestionMocks.deleteStoredImage).toHaveBeenCalledWith(upload.key);
+    expect(ingestionMocks.deleteStoredImage).toHaveBeenCalledWith(
+      upload.key,
+      createdItem.userId,
+    );
   });
 });

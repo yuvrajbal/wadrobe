@@ -9,7 +9,7 @@ export async function ingestWardrobeItem(file: File, userId: string) {
   let upload: StoredImage | undefined;
 
   try {
-    upload = await storeImage(file);
+    upload = await storeImage(file, userId);
     const attributes = await analyzeWardrobeItem(file, upload.type);
 
     const [item] = await getDatabase()
@@ -29,7 +29,7 @@ export async function ingestWardrobeItem(file: File, userId: string) {
   } catch (error) {
     if (upload) {
       try {
-        await deleteStoredImage(upload.key);
+        await deleteStoredImage(upload.key, userId);
       } catch (cleanupError) {
         console.error("Failed to clean up wardrobe image", cleanupError);
       }

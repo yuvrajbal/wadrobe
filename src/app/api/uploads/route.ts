@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 
+import { authenticationErrorResponse } from "@/lib/api-auth";
+import { getCurrentUserId } from "@/lib/current-user";
 import { storeImage, UploadValidationError } from "@/lib/uploads";
 
 export const runtime = "nodejs";
@@ -26,9 +28,12 @@ export async function POST(request: Request) {
   }
 
   try {
-    const upload = await storeImage(file);
+    const upload = await storeImage(file, await getCurrentUserId());
     return NextResponse.json(upload, { status: 201 });
   } catch (error) {
+    const authResponse = authenticationErrorResponse(error);
+    if (authResponse) return authResponse;
+
     if (error instanceof UploadValidationError) {
       return NextResponse.json(
         { error: error.message },

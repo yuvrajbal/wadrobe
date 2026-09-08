@@ -1,7 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const imageMocks = vi.hoisted(() => ({ readStoredImage: vi.fn() }));
+const userId = "123e4567-e89b-42d3-a456-426614174000";
 
+vi.mock("server-only", () => ({}));
+vi.mock("@/lib/current-user", () => ({
+  getCurrentUserId: vi
+    .fn()
+    .mockResolvedValue("123e4567-e89b-42d3-a456-426614174000"),
+}));
 vi.mock("@/lib/uploads", () => ({
   readStoredImage: imageMocks.readStoredImage,
 }));
@@ -27,6 +34,7 @@ describe("GET /api/images/:key", () => {
     expect(new Uint8Array(await response.arrayBuffer())).toEqual(
       new Uint8Array([1, 2, 3]),
     );
+    expect(imageMocks.readStoredImage).toHaveBeenCalledWith("x", userId);
   });
 
   it("returns 404 when the object is missing", async () => {

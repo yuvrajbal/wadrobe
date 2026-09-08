@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { authenticationErrorResponse } from "@/lib/api-auth";
 import { getCurrentUserId } from "@/lib/current-user";
 import {
   outfitCreateSchema,
@@ -23,9 +24,12 @@ export async function GET(request: Request) {
   }
 
   try {
-    const outfits = await listOutfits(getCurrentUserId(), filters.data);
+    const outfits = await listOutfits(await getCurrentUserId(), filters.data);
     return NextResponse.json({ outfits });
   } catch (error) {
+    const authResponse = authenticationErrorResponse(error);
+    if (authResponse) return authResponse;
+
     console.error("Outfit listing failed", error);
     return NextResponse.json(
       { error: "The outfits could not be loaded." },
@@ -55,9 +59,12 @@ export async function POST(request: Request) {
   }
 
   try {
-    const outfit = await createOutfit(getCurrentUserId(), payload.data);
+    const outfit = await createOutfit(await getCurrentUserId(), payload.data);
     return NextResponse.json({ outfit }, { status: 201 });
   } catch (error) {
+    const authResponse = authenticationErrorResponse(error);
+    if (authResponse) return authResponse;
+
     if (error instanceof OutfitDomainError) {
       return NextResponse.json({ error: error.message }, { status: 422 });
     }
