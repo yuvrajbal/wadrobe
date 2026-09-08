@@ -1,4 +1,5 @@
-import { mkdir, writeFile } from "node:fs/promises";
+import { randomUUID } from "node:crypto";
+import { mkdir, unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
 
 import postgres from "postgres";
@@ -9,7 +10,13 @@ if (!databaseUrl) {
   throw new Error("DATABASE_URL is required to seed the Spain trip wardrobe.");
 }
 
-const userId = "00000000-0000-4000-8000-000000000001";
+const userId = process.env.WARDROBE_USER_ID;
+
+if (!userId) {
+  throw new Error(
+    "WARDROBE_USER_ID is required. Use the UUID from the users table after signing in.",
+  );
+}
 const seedMarker = "Spain trip checklist fixture";
 
 const tripItems = [
@@ -223,9 +230,7 @@ function thumbnail(item) {
 
 const uploadDirectory = path.join(
   process.cwd(),
-  "public",
-  "uploads",
-  "spain-trip",
+  process.env.IMAGE_STORAGE_LOCAL_DIR ?? ".data/uploads",
 );
 await mkdir(uploadDirectory, { recursive: true });
 
@@ -236,12 +241,6 @@ try {
   let skipped = 0;
 
   for (const item of tripItems) {
-    await writeFile(
-      path.join(uploadDirectory, `${item.slug}.svg`),
-      thumbnail(item),
-      "utf8",
-    );
-
     const existing = await sql`
       select id
       from items
@@ -256,35 +255,50 @@ try {
       continue;
     }
 
-    await sql`
-      insert into items (
-        user_id,
-        image_url,
-        name,
-        category,
-        colors,
-        pattern,
-        formality,
-        season,
-        material,
-        fit,
-        notes,
-        available
-      ) values (
-        ${userId},
-        ${`/uploads/spain-trip/${item.slug}.svg`},
-        ${item.name},
-        ${item.category},
-        ${item.colors},
-        ${item.pattern},
-        ${item.formality},
-        ${item.season},
-        ${item.material},
-        ${item.fit},
-        ${seedMarker},
-        true
-      )
-    `;
+    const imageKey = `${randomUUID()}.svg`;
+    const imagePath = path.join(uploadDirectory, imageKey);
+    await writeFile(imagePath, thumbnail(item), "utf8");
+
+    try {
+      await sql.begin(async (transaction) => {
+        await transaction`
+          insert into image_objects (key, user_id)
+          values (${imageKey}, ${userId})
+        `;
+        await transaction`
+          insert into items (
+            user_id,
+            image_url,
+            name,
+            category,
+            colors,
+            pattern,
+            formality,
+            season,
+            material,
+            fit,
+            notes,
+            available
+          ) values (
+            ${userId},
+            ${`/api/images/${imageKey}`},
+            ${item.name},
+            ${item.category},
+            ${item.colors},
+            ${item.pattern},
+            ${item.formality},
+            ${item.season},
+            ${item.material},
+            ${item.fit},
+            ${seedMarker},
+            true
+          )
+        `;
+      });
+    } catch (error) {
+      await unlink(imagePath).catch(() => undefined);
+      throw error;
+    }
     inserted += 1;
   }
 

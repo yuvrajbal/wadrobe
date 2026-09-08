@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { authenticationErrorResponse } from "@/lib/api-auth";
 import { getCurrentUserId } from "@/lib/current-user";
 import { critiqueOutfit, OutfitCritiqueError } from "@/lib/outfit-critique";
 import { outfitCritiqueRequestSchema } from "@/lib/outfit-schema";
@@ -28,12 +29,15 @@ export async function POST(request: Request) {
 
   try {
     const items = await getValidOutfitItems(
-      getCurrentUserId(),
+      await getCurrentUserId(),
       payload.data.itemIds,
     );
     const critique = await critiqueOutfit(items);
     return NextResponse.json({ critique });
   } catch (error) {
+    const authResponse = authenticationErrorResponse(error);
+    if (authResponse) return authResponse;
+
     if (error instanceof OutfitDomainError) {
       return NextResponse.json({ error: error.message }, { status: 422 });
     }

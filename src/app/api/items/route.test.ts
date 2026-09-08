@@ -18,6 +18,7 @@ vi.mock("@/lib/wardrobe-items", () => ({
 }));
 
 import { GET, POST } from "@/app/api/items/route";
+import { AuthenticationRequiredError } from "@/lib/api-auth";
 import { WardrobeVisionError } from "@/lib/wardrobe-vision";
 
 const userId = "00000000-0000-4000-8000-000000000001";
@@ -107,6 +108,20 @@ describe("GET /api/items", () => {
       category: "top",
       available: false,
     });
+  });
+
+  it("rejects an unauthenticated request", async () => {
+    routeMocks.getCurrentUserId.mockRejectedValue(
+      new AuthenticationRequiredError(),
+    );
+
+    const response = await GET(new Request("http://localhost/api/items"));
+
+    expect(response.status).toBe(401);
+    await expect(response.json()).resolves.toEqual({
+      error: "Authentication required.",
+    });
+    expect(routeMocks.listWardrobeItems).not.toHaveBeenCalled();
   });
 
   it("rejects invalid filters before querying the database", async () => {

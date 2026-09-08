@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { authenticationErrorResponse } from "@/lib/api-auth";
 import { getCurrentUserId } from "@/lib/current-user";
 import { outfitIdSchema, outfitUpdateSchema } from "@/lib/outfit-schema";
 import { deleteOutfit, OutfitDomainError, updateOutfit } from "@/lib/outfits";
@@ -38,12 +39,19 @@ export async function PATCH(request: Request, context: OutfitRouteContext) {
   }
 
   try {
-    const outfit = await updateOutfit(id, getCurrentUserId(), update.data);
+    const outfit = await updateOutfit(
+      id,
+      await getCurrentUserId(),
+      update.data,
+    );
     if (!outfit) {
       return NextResponse.json({ error: "Outfit not found." }, { status: 404 });
     }
     return NextResponse.json({ outfit });
   } catch (error) {
+    const authResponse = authenticationErrorResponse(error);
+    if (authResponse) return authResponse;
+
     if (error instanceof OutfitDomainError) {
       return NextResponse.json({ error: error.message }, { status: 422 });
     }
@@ -62,12 +70,15 @@ export async function DELETE(_request: Request, context: OutfitRouteContext) {
   }
 
   try {
-    const outfit = await deleteOutfit(id, getCurrentUserId());
+    const outfit = await deleteOutfit(id, await getCurrentUserId());
     if (!outfit) {
       return NextResponse.json({ error: "Outfit not found." }, { status: 404 });
     }
     return new Response(null, { status: 204 });
   } catch (error) {
+    const authResponse = authenticationErrorResponse(error);
+    if (authResponse) return authResponse;
+
     console.error("Outfit deletion failed", error);
     return NextResponse.json(
       { error: "The outfit could not be deleted." },

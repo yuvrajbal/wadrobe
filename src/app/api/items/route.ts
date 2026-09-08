@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { authenticationErrorResponse } from "@/lib/api-auth";
 import { getCurrentUserId } from "@/lib/current-user";
 import { ingestWardrobeItem } from "@/lib/item-ingestion";
 import { itemListFiltersSchema } from "@/lib/item-schema";
@@ -23,9 +24,15 @@ export async function GET(request: Request) {
   }
 
   try {
-    const items = await listWardrobeItems(getCurrentUserId(), filters.data);
+    const items = await listWardrobeItems(
+      await getCurrentUserId(),
+      filters.data,
+    );
     return NextResponse.json({ items });
   } catch (error) {
+    const authResponse = authenticationErrorResponse(error);
+    if (authResponse) return authResponse;
+
     console.error("Wardrobe item listing failed", error);
     return NextResponse.json(
       { error: "The wardrobe items could not be loaded." },
@@ -56,9 +63,12 @@ export async function POST(request: Request) {
   }
 
   try {
-    const item = await ingestWardrobeItem(file, getCurrentUserId());
+    const item = await ingestWardrobeItem(file, await getCurrentUserId());
     return NextResponse.json({ item }, { status: 201 });
   } catch (error) {
+    const authResponse = authenticationErrorResponse(error);
+    if (authResponse) return authResponse;
+
     if (error instanceof UploadValidationError) {
       return NextResponse.json(
         { error: error.message },

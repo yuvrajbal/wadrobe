@@ -10,12 +10,14 @@ walking level, style direction, and recent save/reject feedback.
 
 - Node.js 20.9 or newer
 - Docker with Compose (for the optional local Postgres instance)
+- A GitHub OAuth app (for sign-in)
 - An OpenAI API key (used for garment ingestion, critique, and recommendations)
 
 ## Local setup
 
 ```bash
 cp .env.example .env.local
+# Fill in BETTER_AUTH_SECRET and the GitHub OAuth credentials.
 docker compose up -d postgres
 npm install
 npm run db:migrate
@@ -27,19 +29,22 @@ connection.
 
 ## User identity
 
-The MVP is intentionally single-user. Server-side code obtains the current user
-ID from `getCurrentUserId()` in `src/lib/current-user.ts`; do not copy its UUID
-into route handlers or database queries. This keeps user scoping consistent and
-provides one replacement point when authentication is introduced.
+Wadrobe uses Better Auth with GitHub OAuth and database-backed, rolling sessions.
+Protected pages redirect to `/sign-in`; user-scoped API and image routes verify
+the server session and return `401` without one. Server code obtains the UUID
+application user ID from `getCurrentUserId()` in `src/lib/current-user.ts`, so
+route and service code remains independent of the authentication provider.
 
-When authentication is added, replace the helper's fixed UUID with the user ID
-from the authenticated server session. Existing item and outfit rows can then be
-assigned to the first real account in a data migration before the fixed identity
-is removed.
+Items, outfits, and private image-object records reference the authenticated
+application user. Every read, write, and object delivery is scoped by that UUID;
+clients cannot select or change it. See
+[the authentication runbook](docs/authentication.md) for OAuth setup, session
+behavior, production secrets, account recovery, and the no-data-loss legacy MVP
+migration.
 
 ## Image uploads
 
-`POST /api/uploads` accepts multipart form data in a field named `file`. It
+Authenticated `POST /api/uploads` accepts multipart form data in a field named `file`. It
 accepts JPEG, PNG, and WebP files up to 10 MB, checks the file signature, stores
 the image through the configured storage adapter, and returns a stable app URL.
 
@@ -61,10 +66,10 @@ for provisioning, backups, dry-run, merge, verification, and rollback.
 
 ## Wardrobe item ingestion
 
-`POST /api/items` accepts the same multipart `file` field, stores the validated
-image, analyzes it once with OpenAI vision, validates the structured attributes,
-and persists the item for the single MVP user. The stored image is removed if
-analysis or database persistence fails.
+Authenticated `POST /api/items` accepts the same multipart `file` field, stores
+the validated image, analyzes it once with OpenAI vision, validates the
+structured attributes, and persists the item for the current user. The stored
+image is removed if analysis or database persistence fails.
 
 ```bash
 curl -F "file=@./shirt.png" http://localhost:3000/api/items
@@ -166,7 +171,8 @@ npm run db:migrate   # apply pending migrations
 
 The Playwright suite starts the app on port 3100 and uses deterministic API
 responses, so it does not require Postgres or an OpenAI key. Install Chromium
-once with `npm run test:e2e:install` before running it locally.
+once with `npm run test:e2e:install` before running it locally. Its web server
+sets an explicit authentication bypass that the proxy ignores in production.
 
 Only server modules read `OPENAI_API_KEY`, `DATABASE_URL`, and storage
 credentials; never create `NEXT_PUBLIC_` variants. `DATABASE_SSL` defaults to

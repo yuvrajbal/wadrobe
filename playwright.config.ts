@@ -24,7 +24,8 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: "npm run dev -- --hostname 127.0.0.1 --port 3100",
+    command:
+      "E2E_AUTH_BYPASS=true DATABASE_URL=postgres://unused:unused@127.0.0.1:1/unused DATABASE_SSL=disable BETTER_AUTH_SECRET=e2e-only-secret-with-at-least-32-bytes BETTER_AUTH_URL=http://127.0.0.1:3100 GITHUB_CLIENT_ID=e2e GITHUB_CLIENT_SECRET=e2e npm run dev -- --hostname 127.0.0.1 --port 3100",
     url: "http://127.0.0.1:3100",
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,

@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
+import { authClient } from "@/lib/auth-client";
+
 const links = [
   { href: "/", label: "Wardrobe", icon: "▦" },
   { href: "/builder", label: "Build", icon: "◇" },
@@ -12,6 +14,19 @@ const links = [
 
 export function AppNavigation({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const { data: session } = authClient.useSession();
+
+  async function signOut() {
+    await authClient.signOut({
+      fetchOptions: {
+        onSuccess: () => {
+          window.location.assign("/sign-in");
+        },
+      },
+    });
+  }
+
+  if (pathname === "/sign-in") return children;
 
   return (
     <>
@@ -67,12 +82,26 @@ export function AppNavigation({ children }: { children: React.ReactNode }) {
             })}
           </nav>
 
-          <Link
-            href="/suggestions"
-            className="hidden min-h-10 items-center rounded-full bg-[#c7623d] px-4 text-[0.8rem] font-semibold text-white shadow-[0_12px_25px_-16px_rgba(150,61,30,0.9)] transition hover:-translate-y-0.5 hover:bg-[#b75533] sm:flex md:hidden lg:flex"
-          >
-            Get dressed&nbsp; →
-          </Link>
+          <div className="flex items-center gap-2">
+            <Link
+              href="/suggestions"
+              className="hidden min-h-10 items-center rounded-full bg-[#c7623d] px-4 text-[0.8rem] font-semibold text-white shadow-[0_12px_25px_-16px_rgba(150,61,30,0.9)] transition hover:-translate-y-0.5 hover:bg-[#b75533] sm:flex md:hidden lg:flex"
+            >
+              Get dressed&nbsp; →
+            </Link>
+            <button
+              type="button"
+              onClick={signOut}
+              title={
+                session?.user.email
+                  ? `Signed in as ${session.user.email}`
+                  : undefined
+              }
+              className="min-h-10 rounded-full border border-emerald-950/10 px-3 text-[0.75rem] font-semibold text-emerald-950/60 transition hover:bg-white/70 hover:text-emerald-950"
+            >
+              Sign out
+            </button>
+          </div>
         </div>
       </header>
 

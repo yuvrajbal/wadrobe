@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { authenticationErrorResponse } from "@/lib/api-auth";
 import { getCurrentUserId } from "@/lib/current-user";
 import { itemIdSchema, itemUpdateSchema } from "@/lib/item-schema";
 import { deleteWardrobeItem, updateWardrobeItem } from "@/lib/wardrobe-items";
@@ -45,7 +46,7 @@ export async function PATCH(request: Request, context: ItemRouteContext) {
   try {
     const item = await updateWardrobeItem(
       id,
-      getCurrentUserId(),
+      await getCurrentUserId(),
       attributes.data,
     );
 
@@ -58,6 +59,9 @@ export async function PATCH(request: Request, context: ItemRouteContext) {
 
     return NextResponse.json({ item });
   } catch (error) {
+    const authResponse = authenticationErrorResponse(error);
+    if (authResponse) return authResponse;
+
     console.error("Wardrobe item update failed", error);
     return NextResponse.json(
       { error: "The wardrobe item could not be updated." },
@@ -74,7 +78,7 @@ export async function DELETE(_request: Request, context: ItemRouteContext) {
   }
 
   try {
-    const item = await deleteWardrobeItem(id, getCurrentUserId());
+    const item = await deleteWardrobeItem(id, await getCurrentUserId());
 
     if (!item) {
       return NextResponse.json(
@@ -85,6 +89,9 @@ export async function DELETE(_request: Request, context: ItemRouteContext) {
 
     return new Response(null, { status: 204 });
   } catch (error) {
+    const authResponse = authenticationErrorResponse(error);
+    if (authResponse) return authResponse;
+
     console.error("Wardrobe item deletion failed", error);
     return NextResponse.json(
       { error: "The wardrobe item could not be deleted." },

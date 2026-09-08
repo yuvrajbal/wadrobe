@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { authenticationErrorResponse } from "@/lib/api-auth";
 import { getCurrentUserId } from "@/lib/current-user";
 import { outfitFeedbackSchema } from "@/lib/outfit-schema";
 import { createAiOutfitFeedback, OutfitDomainError } from "@/lib/outfits";
@@ -27,11 +28,14 @@ export async function POST(request: Request) {
 
   try {
     const outfit = await createAiOutfitFeedback(
-      getCurrentUserId(),
+      await getCurrentUserId(),
       feedback.data,
     );
     return NextResponse.json({ outfit }, { status: 201 });
   } catch (error) {
+    const authResponse = authenticationErrorResponse(error);
+    if (authResponse) return authResponse;
+
     if (error instanceof OutfitDomainError) {
       return NextResponse.json({ error: error.message }, { status: 422 });
     }

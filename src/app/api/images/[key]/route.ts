@@ -1,3 +1,5 @@
+import { authenticationErrorResponse } from "@/lib/api-auth";
+import { getCurrentUserId } from "@/lib/current-user";
 import { readStoredImage } from "@/lib/uploads";
 
 export const runtime = "nodejs";
@@ -10,7 +12,7 @@ export async function GET(_request: Request, context: ImageRouteContext) {
   const { key } = await context.params;
 
   try {
-    const image = await readStoredImage(key);
+    const image = await readStoredImage(key, await getCurrentUserId());
     if (!image) return new Response(null, { status: 404 });
 
     return new Response(image.body as BodyInit, {
@@ -22,6 +24,9 @@ export async function GET(_request: Request, context: ImageRouteContext) {
       },
     });
   } catch (error) {
+    const authResponse = authenticationErrorResponse(error);
+    if (authResponse) return authResponse;
+
     if (error instanceof Error && error.message.includes("invalid image")) {
       return new Response(null, { status: 400 });
     }

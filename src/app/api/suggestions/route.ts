@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { authenticationErrorResponse } from "@/lib/api-auth";
 import { getCurrentUserId } from "@/lib/current-user";
 import {
   InsufficientWardrobeError,
@@ -33,7 +34,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const userId = getCurrentUserId();
+    const userId = await getCurrentUserId();
     const [wardrobeItems, feedback] = await Promise.all([
       listWardrobeItems(userId, {}),
       listRecentOutfitFeedback(userId),
@@ -52,6 +53,9 @@ export async function POST(request: Request) {
     });
     return NextResponse.json(result);
   } catch (error) {
+    const authResponse = authenticationErrorResponse(error);
+    if (authResponse) return authResponse;
+
     if (error instanceof InsufficientWardrobeError) {
       return NextResponse.json({ error: error.message }, { status: 422 });
     }
