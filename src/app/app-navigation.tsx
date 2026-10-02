@@ -1,5 +1,6 @@
 "use client";
 
+import { Show, SignInButton, SignUpButton, UserButton } from "@clerk/nextjs";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -67,45 +68,68 @@ export function AppNavigation({ children }: { children: React.ReactNode }) {
             })}
           </nav>
 
-          <Link
-            href="/suggestions"
-            className="hidden min-h-10 items-center rounded-full bg-[#c7623d] px-4 text-[0.8rem] font-semibold text-white shadow-[0_12px_25px_-16px_rgba(150,61,30,0.9)] transition hover:-translate-y-0.5 hover:bg-[#b75533] sm:flex md:hidden lg:flex"
-          >
-            Get dressed&nbsp; →
-          </Link>
+          <div className="flex items-center gap-2">
+            <Show when="signed-out">
+              <SignInButton>
+                <button className="min-h-10 rounded-full px-4 text-[0.8rem] font-semibold text-emerald-950 transition hover:bg-white/70">
+                  Sign in
+                </button>
+              </SignInButton>
+              <SignUpButton>
+                <button className="min-h-10 rounded-full bg-[#c7623d] px-4 text-[0.8rem] font-semibold text-white shadow-sm transition hover:bg-[#b75533]">
+                  Create account
+                </button>
+              </SignUpButton>
+            </Show>
+
+            <Show when="signed-in">
+              <Link
+                href="/suggestions"
+                className="hidden min-h-10 items-center rounded-full bg-[#c7623d] px-4 text-[0.8rem] font-semibold text-white shadow-[0_12px_25px_-16px_rgba(150,61,30,0.9)] transition hover:-translate-y-0.5 hover:bg-[#b75533] lg:flex"
+              >
+                Get dressed&nbsp; →
+              </Link>
+              <UserButton />
+            </Show>
+          </div>
         </div>
       </header>
 
       <div id="main-content">{children}</div>
 
-      <nav
-        className="fixed inset-x-3 bottom-3 z-40 grid grid-cols-4 rounded-[1.4rem] border border-emerald-950/10 bg-[#fbfaf6]/94 p-1.5 pb-[max(0.375rem,env(safe-area-inset-bottom))] shadow-[0_22px_60px_-18px_rgba(6,78,59,0.42)] backdrop-blur-2xl md:hidden"
-        aria-label="Primary"
-      >
-        {links.map((link) => {
-          const active =
-            link.href === "/"
-              ? pathname === "/"
-              : pathname.startsWith(link.href);
-          return (
-            <Link
-              key={link.href}
-              href={link.href}
-              aria-current={active ? "page" : undefined}
-              className={`relative flex min-h-14 flex-col items-center justify-center gap-1 rounded-[1.05rem] text-[0.65rem] font-semibold transition ${
-                active
-                  ? "bg-emerald-950 text-white shadow-sm"
-                  : "text-emerald-950/50 active:bg-emerald-950/5"
-              }`}
-            >
-              <span className="text-[1.05rem] leading-none" aria-hidden="true">
-                {link.icon}
-              </span>
-              {link.label}
-            </Link>
-          );
-        })}
-      </nav>
+      <Show when="signed-in">
+        <nav
+          className="fixed inset-x-3 bottom-3 z-40 grid grid-cols-4 rounded-[1.4rem] border border-emerald-950/10 bg-[#fbfaf6]/94 p-1.5 pb-[max(0.375rem,env(safe-area-inset-bottom))] shadow-[0_22px_60px_-18px_rgba(6,78,59,0.42)] backdrop-blur-2xl md:hidden"
+          aria-label="Primary"
+        >
+          {links.map((link) => {
+            const active =
+              link.href === "/"
+                ? pathname === "/"
+                : pathname.startsWith(link.href);
+            return (
+              <Link
+                key={link.href}
+                href={link.href}
+                aria-current={active ? "page" : undefined}
+                className={`relative flex min-h-14 flex-col items-center justify-center gap-1 rounded-[1.05rem] text-[0.65rem] font-semibold transition ${
+                  active
+                    ? "bg-emerald-950 text-white shadow-sm"
+                    : "text-emerald-950/50 active:bg-emerald-950/5"
+                }`}
+              >
+                <span
+                  className="text-[1.05rem] leading-none"
+                  aria-hidden="true"
+                >
+                  {link.icon}
+                </span>
+                {link.label}
+              </Link>
+            );
+          })}
+        </nav>
+      </Show>
     </>
   );
 }

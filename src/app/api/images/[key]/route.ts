@@ -1,4 +1,6 @@
+import { getCurrentUserId } from "@/lib/current-user";
 import { readStoredImage } from "@/lib/uploads";
+import { userOwnsImage } from "@/lib/wardrobe-items";
 
 export const runtime = "nodejs";
 
@@ -10,6 +12,11 @@ export async function GET(_request: Request, context: ImageRouteContext) {
   const { key } = await context.params;
 
   try {
+    const userId = await getCurrentUserId();
+    if (!(await userOwnsImage(userId, key))) {
+      return new Response(null, { status: 404 });
+    }
+
     const image = await readStoredImage(key);
     if (!image) return new Response(null, { status: 404 });
 

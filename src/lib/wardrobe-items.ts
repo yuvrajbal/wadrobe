@@ -28,6 +28,24 @@ export async function listWardrobeItems(
     .orderBy(desc(items.createdAt));
 }
 
+export async function userOwnsImage(
+  userId: string,
+  imageKey: string,
+): Promise<boolean> {
+  const [item] = await getDatabase()
+    .select({ id: items.id })
+    .from(items)
+    .where(
+      and(
+        eq(items.userId, userId),
+        eq(items.imageUrl, `/api/images/${imageKey}`),
+      ),
+    )
+    .limit(1);
+
+  return Boolean(item);
+}
+
 export async function updateWardrobeItem(
   id: string,
   userId: string,

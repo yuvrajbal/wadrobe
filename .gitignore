@@ -34,3 +34,4 @@
 
 # graphify's intermediate/cache files; reports remain available locally
 /graphify-out/
+.clerk/

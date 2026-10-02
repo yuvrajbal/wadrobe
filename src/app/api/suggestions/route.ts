@@ -33,7 +33,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const userId = getCurrentUserId();
+    const userId = await getCurrentUserId();
     const [wardrobeItems, feedback] = await Promise.all([
       listWardrobeItems(userId, {}),
       listRecentOutfitFeedback(userId),

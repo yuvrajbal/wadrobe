@@ -38,7 +38,8 @@ export async function PATCH(request: Request, context: OutfitRouteContext) {
   }
 
   try {
-    const outfit = await updateOutfit(id, getCurrentUserId(), update.data);
+    const userId = await getCurrentUserId();
+    const outfit = await updateOutfit(id, userId, update.data);
     if (!outfit) {
       return NextResponse.json({ error: "Outfit not found." }, { status: 404 });
     }
@@ -62,7 +63,8 @@ export async function DELETE(_request: Request, context: OutfitRouteContext) {
   }
 
   try {
-    const outfit = await deleteOutfit(id, getCurrentUserId());
+    const userId = await getCurrentUserId();
+    const outfit = await deleteOutfit(id, userId);
     if (!outfit) {
       return NextResponse.json({ error: "Outfit not found." }, { status: 404 });
     }

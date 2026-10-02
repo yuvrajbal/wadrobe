@@ -23,7 +23,8 @@ export async function GET(request: Request) {
   }
 
   try {
-    const items = await listWardrobeItems(getCurrentUserId(), filters.data);
+    const userId = await getCurrentUserId();
+    const items = await listWardrobeItems(userId, filters.data);
     return NextResponse.json({ items });
   } catch (error) {
     console.error("Wardrobe item listing failed", error);
@@ -56,7 +57,8 @@ export async function POST(request: Request) {
   }
 
   try {
-    const item = await ingestWardrobeItem(file, getCurrentUserId());
+    const userId = await getCurrentUserId();
+    const item = await ingestWardrobeItem(file, userId);
     return NextResponse.json({ item }, { status: 201 });
   } catch (error) {
     if (error instanceof UploadValidationError) {

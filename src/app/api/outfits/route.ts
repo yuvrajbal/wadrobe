@@ -23,7 +23,8 @@ export async function GET(request: Request) {
   }
 
   try {
-    const outfits = await listOutfits(getCurrentUserId(), filters.data);
+    const userId = await getCurrentUserId();
+    const outfits = await listOutfits(userId, filters.data);
     return NextResponse.json({ outfits });
   } catch (error) {
     console.error("Outfit listing failed", error);
@@ -55,7 +56,8 @@ export async function POST(request: Request) {
   }
 
   try {
-    const outfit = await createOutfit(getCurrentUserId(), payload.data);
+    const userId = await getCurrentUserId();
+    const outfit = await createOutfit(userId, payload.data);
     return NextResponse.json({ outfit }, { status: 201 });
   } catch (error) {
     if (error instanceof OutfitDomainError) {

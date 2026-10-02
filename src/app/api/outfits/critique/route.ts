@@ -27,10 +27,8 @@ export async function POST(request: Request) {
   }
 
   try {
-    const items = await getValidOutfitItems(
-      getCurrentUserId(),
-      payload.data.itemIds,
-    );
+    const userId = await getCurrentUserId();
+    const items = await getValidOutfitItems(userId, payload.data.itemIds);
     const critique = await critiqueOutfit(items);
     return NextResponse.json({ critique });
   } catch (error) {

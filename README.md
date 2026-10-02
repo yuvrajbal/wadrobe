@@ -10,6 +10,7 @@ walking level, style direction, and recent save/reject feedback.
 
 - Node.js 20.9 or newer
 - Docker with Compose (for the optional local Postgres instance)
+- A Clerk application
 - An OpenAI API key (used for garment ingestion, critique, and recommendations)
 
 ## Local setup
@@ -25,17 +26,22 @@ npm run dev
 The app runs at `http://localhost:3000`. `GET /api/health` verifies the database
 connection.
 
-## User identity
+## Authentication and user identity
 
-The MVP is intentionally single-user. Server-side code obtains the current user
-ID from `getCurrentUserId()` in `src/lib/current-user.ts`; do not copy its UUID
-into route handlers or database queries. This keeps user scoping consistent and
-provides one replacement point when authentication is introduced.
+Clerk handles sign-in and sessions. The application maps each Clerk user to an
+internal UUID in the `users` table; item, outfit, recommendation, and image
+queries remain scoped to that UUID. Clerk provider IDs are never accepted from
+the browser as an ownership input.
 
-When authentication is added, replace the helper's fixed UUID with the user ID
-from the authenticated server session. Existing item and outfit rows can then be
-assigned to the first real account in a data migration before the fixed identity
-is removed.
+Migration `0001_clerk_users` creates an unclaimed legacy user so an existing
+single-user wardrobe is preserved. Keep the Clerk application restricted to the
+owner's email until the owner signs in once. That first authenticated account
+claims the legacy wardrobe; later accounts receive separate empty wardrobes.
+After that first sign-in, Clerk can be changed to invite-only or public signup.
+
+All application pages and API routes require authentication except `/sign-in`,
+`/sign-up`, and `/api/health`. Stored images are also checked against the current
+user's item ownership before delivery.
 
 ## Image uploads
 
@@ -63,7 +69,7 @@ for provisioning, backups, dry-run, merge, verification, and rollback.
 
 `POST /api/items` accepts the same multipart `file` field, stores the validated
 image, analyzes it once with OpenAI vision, validates the structured attributes,
-and persists the item for the single MVP user. The stored image is removed if
+and persists the item for the authenticated user. The stored image is removed if
 analysis or database persistence fails.
 
 ```bash

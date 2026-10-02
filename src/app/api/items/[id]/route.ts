@@ -43,11 +43,8 @@ export async function PATCH(request: Request, context: ItemRouteContext) {
   }
 
   try {
-    const item = await updateWardrobeItem(
-      id,
-      getCurrentUserId(),
-      attributes.data,
-    );
+    const userId = await getCurrentUserId();
+    const item = await updateWardrobeItem(id, userId, attributes.data);
 
     if (!item) {
       return NextResponse.json(
@@ -74,7 +71,8 @@ export async function DELETE(_request: Request, context: ItemRouteContext) {
   }
 
   try {
-    const item = await deleteWardrobeItem(id, getCurrentUserId());
+    const userId = await getCurrentUserId();
+    const item = await deleteWardrobeItem(id, userId);
 
     if (!item) {
       return NextResponse.json(

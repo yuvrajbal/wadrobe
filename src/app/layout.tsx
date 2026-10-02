@@ -1,3 +1,4 @@
+import { ClerkProvider } from "@clerk/nextjs";
 import type { Metadata } from "next";
 
 import { AppNavigation } from "@/app/app-navigation";
@@ -21,8 +22,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <AppNavigation>{children}</AppNavigation>
-        <NotificationProvider />
+        <ClerkProvider>
+          <AppNavigation>{children}</AppNavigation>
+          <NotificationProvider />
+        </ClerkProvider>
       </body>
     </html>
   );

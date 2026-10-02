@@ -26,10 +26,8 @@ export async function POST(request: Request) {
   }
 
   try {
-    const outfit = await createAiOutfitFeedback(
-      getCurrentUserId(),
-      feedback.data,
-    );
+    const userId = await getCurrentUserId();
+    const outfit = await createAiOutfitFeedback(userId, feedback.data);
     return NextResponse.json({ outfit }, { status: 201 });
   } catch (error) {
     if (error instanceof OutfitDomainError) {

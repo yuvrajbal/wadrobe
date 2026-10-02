@@ -1,9 +1,21 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const imageMocks = vi.hoisted(() => ({ readStoredImage: vi.fn() }));
+const imageMocks = vi.hoisted(() => ({
+  getCurrentUserId: vi.fn(),
+  readStoredImage: vi.fn(),
+  userOwnsImage: vi.fn(),
+}));
+
+vi.mock("@/lib/current-user", () => ({
+  getCurrentUserId: imageMocks.getCurrentUserId,
+}));
 
 vi.mock("@/lib/uploads", () => ({
   readStoredImage: imageMocks.readStoredImage,
+}));
+
+vi.mock("@/lib/wardrobe-items", () => ({
+  userOwnsImage: imageMocks.userOwnsImage,
 }));
 
 import { GET } from "@/app/api/images/[key]/route";
@@ -11,7 +23,13 @@ import { GET } from "@/app/api/images/[key]/route";
 const context = (key: string) => ({ params: Promise.resolve({ key }) });
 
 describe("GET /api/images/:key", () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => {
+    vi.clearAllMocks();
+    imageMocks.getCurrentUserId.mockResolvedValue(
+      "00000000-0000-4000-8000-000000000001",
+    );
+    imageMocks.userOwnsImage.mockResolvedValue(true);
+  });
 
   it("delivers a private stored image", async () => {
     imageMocks.readStoredImage.mockResolvedValue({
@@ -33,5 +51,14 @@ describe("GET /api/images/:key", () => {
     imageMocks.readStoredImage.mockResolvedValue(null);
     const response = await GET(new Request("http://localhost"), context("x"));
     expect(response.status).toBe(404);
+  });
+
+  it("does not reveal an image owned by another user", async () => {
+    imageMocks.userOwnsImage.mockResolvedValue(false);
+
+    const response = await GET(new Request("http://localhost"), context("x"));
+
+    expect(response.status).toBe(404);
+    expect(imageMocks.readStoredImage).not.toHaveBeenCalled();
   });
 });

@@ -37,11 +37,25 @@ export type OutfitContext = {
   style?: string;
 };
 
+export const users = pgTable(
+  "users",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    clerkUserId: varchar("clerk_user_id", { length: 255 }).unique(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [index("users_clerk_user_id_idx").on(table.clerkUserId)],
+);
+
 export const items = pgTable(
   "items",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    userId: uuid("user_id").notNull(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
     imageUrl: text("image_url").notNull(),
     name: varchar("name", { length: 160 }).notNull(),
     category: itemCategory("category").notNull(),
@@ -78,7 +92,9 @@ export const outfits = pgTable(
   "outfits",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    userId: uuid("user_id").notNull(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
     itemIds: uuid("item_ids").array().notNull(),
     context: jsonb("context")
       .$type<OutfitContext>()
@@ -101,3 +117,4 @@ export type Item = typeof items.$inferSelect;
 export type NewItem = typeof items.$inferInsert;
 export type Outfit = typeof outfits.$inferSelect;
 export type NewOutfit = typeof outfits.$inferInsert;
+export type User = typeof users.$inferSelect;

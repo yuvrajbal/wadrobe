@@ -8,6 +8,13 @@
       "when": 1784691741024,
       "tag": "0000_lonely_tarantula",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1790812800000,
+      "tag": "0001_clerk_users",
+      "breakpoints": true
     }
   ]
 }
