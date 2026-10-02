@@ -552,6 +552,7 @@ function SuggestionCard({
           >
             <Image
               src={item.imageUrl}
+              unoptimized
               alt={item.name}
               fill
               sizes="(max-width: 640px) 33vw, 15vw"

@@ -473,6 +473,7 @@ function OutfitSlot({
       <div className="relative aspect-[4/5] bg-emerald-950/5">
         <Image
           src={item.imageUrl}
+          unoptimized
           alt={item.name}
           fill
           sizes="(max-width: 640px) 50vw, 30vw"
@@ -614,6 +615,7 @@ function ItemPicker({
                 <div className="relative aspect-[4/5] bg-emerald-950/5">
                   <Image
                     src={item.imageUrl}
+                    unoptimized
                     alt={item.name}
                     fill
                     sizes="(max-width: 640px) 50vw, 25vw"

@@ -153,6 +153,7 @@ export function SavedOutfits() {
                         >
                           <Image
                             src={item.imageUrl}
+                            unoptimized
                             alt={item.name}
                             fill
                             sizes="(max-width: 640px) 50vw, (max-width: 1024px) 25vw, 18vw"

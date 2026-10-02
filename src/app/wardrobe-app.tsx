@@ -455,6 +455,7 @@ function ItemCard({
       <div className="relative aspect-[4/5] overflow-hidden bg-emerald-950/5">
         <Image
           src={item.imageUrl}
+          unoptimized
           alt={item.name}
           fill
           sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
@@ -914,6 +915,7 @@ function ItemDialog({
             <div className="relative aspect-[4/5] overflow-hidden rounded-3xl bg-emerald-950/5">
               <Image
                 src={item.imageUrl}
+                unoptimized
                 alt={item.name}
                 fill
                 sizes="(max-width: 640px) 100vw, 40vw"
