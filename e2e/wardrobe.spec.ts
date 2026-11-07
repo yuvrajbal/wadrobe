@@ -106,3 +106,57 @@ test("lets the user replace an upload before analysis", async ({ page }) => {
     page.getByRole("button", { name: /Blue overshirt/ }),
   ).toBeVisible();
 });
+
+test("downscales large photos before uploading them", async ({ page }) => {
+  await mockWardrobe(page, []);
+  await page.goto("/");
+
+  // A noisy 4032x3024 JPEG, the size of a typical phone photo.
+  const photo = Buffer.from(
+    await page.evaluate(async () => {
+      const canvas = document.createElement("canvas");
+      canvas.width = 4032;
+      canvas.height = 3024;
+      const context = canvas.getContext("2d")!;
+      const pixels = context.createImageData(canvas.width, canvas.height);
+      for (let index = 0; index < pixels.data.length; index += 1) {
+        pixels.data[index] = index % 4 === 3 ? 255 : Math.random() * 255;
+      }
+      context.putImageData(pixels, 0, 0);
+      const blob = await new Promise<Blob>((resolve) =>
+        canvas.toBlob((result) => resolve(result!), "image/jpeg", 1),
+      );
+      return [...new Uint8Array(await blob.arrayBuffer())];
+    }),
+  );
+  expect(photo.length).toBeGreaterThan(4.5 * 1024 * 1024);
+
+  let uploaded: Buffer | null = null;
+  await page.route("**/api/items", async (route) => {
+    if (route.request().method() === "POST") {
+      uploaded = route.request().postDataBuffer();
+      await route.fulfill({
+        status: 201,
+        json: { item: { ...wardrobeItems[0], id: "resized-top" } },
+      });
+      return;
+    }
+    await route.fallback();
+  });
+
+  await page.getByLabel("Add garment").setInputFiles({
+    name: "IMG_0001.jpeg",
+    mimeType: "image/jpeg",
+    buffer: photo,
+  });
+  const dialog = page.getByRole("dialog", { name: "Add a garment" });
+  await dialog.getByRole("button", { name: "Analyze item" }).click();
+  await expect(dialog).toBeHidden();
+
+  expect(uploaded).not.toBeNull();
+  const body = uploaded! as Buffer;
+  expect(body.length).toBeLessThan(4.5 * 1024 * 1024);
+  expect(body.toString("latin1")).toContain(
+    'filename="IMG_0001.jpg"\r\nContent-Type: image/jpeg',
+  );
+});

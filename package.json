@@ -28,6 +28,7 @@
     "@aws-sdk/client-s3": "^3.1116.0",
     "@clerk/nextjs": "^7.9.10",
     "drizzle-orm": "0.45.2",
+    "heic-to": "1.6.7",
     "next": "16.3.8",
     "openai": "6.48.0",
     "postgres": "3.4.9",

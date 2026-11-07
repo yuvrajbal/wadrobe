@@ -12,6 +12,11 @@ import {
 } from "react";
 
 import { notifications, safeNotificationMessage } from "@/lib/notifications";
+import {
+  ACCEPTED_IMAGE_TYPES,
+  isHeicFile,
+  prepareImageForUpload,
+} from "@/lib/resize-image";
 
 const categories = [
   { label: "All", value: "all" },
@@ -98,6 +103,7 @@ export function WardrobeApp() {
     previewUrl: string;
   } | null>(null);
   const previewUrlRef = useRef<string | null>(null);
+  const fileSelectionRef = useRef(0);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState("");
   const [selectedItem, setSelectedItem] = useState<WardrobeItem | null>(null);
@@ -160,18 +166,46 @@ export function WardrobeApp() {
     setPendingUpload(null);
   }
 
-  function chooseFile(event: ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
+  async function chooseFile(event: ChangeEvent<HTMLInputElement>) {
+    const selected = event.target.files?.[0];
     event.target.value = "";
+    if (!selected) return;
 
-    if (file) {
-      if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
+    const selection = ++fileSelectionRef.current;
+    let file = selected;
 
-      const preview = URL.createObjectURL(file);
-      previewUrlRef.current = preview;
-      setUploadError("");
-      setPendingUpload({ file, previewUrl: preview });
+    // Most browsers cannot preview HEIC, so convert it to JPEG up front.
+    if (isHeicFile(selected)) {
+      notifications.info({
+        id: "wardrobe-convert",
+        title: "Converting your photo…",
+      });
+      try {
+        file = await prepareImageForUpload(selected);
+        notifications.dismiss("wardrobe-convert");
+      } catch (error) {
+        if (selection !== fileSelectionRef.current) return;
+        notifications.error({
+          id: "wardrobe-convert",
+          title: "Couldn’t open that photo.",
+          description: safeNotificationMessage(
+            error instanceof Error ? error.message : null,
+            "This photo could not be read. Try a JPEG, PNG, or WebP image.",
+          ),
+        });
+        return;
+      }
     }
+
+    // A newer selection arrived while this one was converting.
+    if (selection !== fileSelectionRef.current) return;
+
+    if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
+
+    const preview = URL.createObjectURL(file);
+    previewUrlRef.current = preview;
+    setUploadError("");
+    setPendingUpload({ file, previewUrl: preview });
   }
 
   async function uploadItem() {
@@ -179,10 +213,11 @@ export function WardrobeApp() {
 
     setIsUploading(true);
     setUploadError("");
-    const formData = new FormData();
-    formData.set("file", pendingFile);
 
     try {
+      const formData = new FormData();
+      formData.set("file", await prepareImageForUpload(pendingFile));
+
       const response = await fetch("/api/items", {
         method: "POST",
         body: formData,
@@ -288,7 +323,7 @@ export function WardrobeApp() {
                 <input
                   className="sr-only"
                   type="file"
-                  accept="image/jpeg,image/png,image/webp"
+                  accept={ACCEPTED_IMAGE_TYPES}
                   onChange={chooseFile}
                 />
               </label>
@@ -753,7 +788,7 @@ function UploadDialog({
               <input
                 className="sr-only"
                 type="file"
-                accept="image/jpeg,image/png,image/webp"
+                accept={ACCEPTED_IMAGE_TYPES}
                 disabled={isUploading}
                 onChange={onChooseFile}
               />
