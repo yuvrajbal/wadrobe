@@ -101,9 +101,9 @@ describe("recommendOutfits", () => {
     expect(payload).toContain("preferredColors");
     expect(payload).toContain("saved");
     expect(payload).not.toContain("imageUrl");
-    expect(payload).not.toContain("private name");
+    expect(payload).toContain("top private name");
+    expect(payload).toContain("cotton");
     expect(payload).not.toContain("private notes");
-    expect(payload).not.toContain("material");
     expect(payload).not.toContain(userId);
   });
 
