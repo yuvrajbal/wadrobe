@@ -11,6 +11,7 @@ const links = [
   { href: "/builder", label: "Build", icon: "◇" },
   { href: "/suggestions", label: "Suggest", icon: "✦" },
   { href: "/saved", label: "Saved", icon: "♡" },
+  { href: "/shop", label: "Shop", icon: "◎" },
 ] as const;
 
 export function AppNavigation({ children }: { children: React.ReactNode }) {
@@ -102,7 +103,7 @@ export function AppNavigation({ children }: { children: React.ReactNode }) {
 
       <Show when="signed-in">
         <nav
-          className="fixed inset-x-3 bottom-3 z-40 grid grid-cols-4 rounded-[1.4rem] border border-ink/10 bg-surface/94 p-1.5 pb-[max(0.375rem,env(safe-area-inset-bottom))] shadow-[0_22px_60px_-18px_rgba(6,78,59,0.42)] backdrop-blur-2xl md:hidden"
+          className="fixed inset-x-3 bottom-3 z-40 grid grid-cols-5 rounded-[1.4rem] border border-ink/10 bg-surface/94 p-1.5 pb-[max(0.375rem,env(safe-area-inset-bottom))] shadow-[0_22px_60px_-18px_rgba(6,78,59,0.42)] backdrop-blur-2xl md:hidden"
           aria-label="Primary"
         >
           {links.map((link) => {

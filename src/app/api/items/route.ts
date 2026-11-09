@@ -2,7 +2,11 @@ import { NextResponse } from "next/server";
 
 import { getCurrentUserId } from "@/lib/current-user";
 import { ingestWardrobeItem } from "@/lib/item-ingestion";
-import { itemListFiltersSchema } from "@/lib/item-schema";
+import {
+  itemListFiltersSchema,
+  wardrobeItemAttributesSchema,
+  type WardrobeItemAttributes,
+} from "@/lib/item-schema";
 import { UploadValidationError } from "@/lib/uploads";
 import { listWardrobeItems } from "@/lib/wardrobe-items";
 import { WardrobeVisionError } from "@/lib/wardrobe-vision";
@@ -56,9 +60,30 @@ export async function POST(request: Request) {
     );
   }
 
+  // Optional pre-analyzed attributes (sent after a purchase check) let the
+  // item be created without a second vision call.
+  const rawAttributes = formData.get("attributes");
+  let attributes: WardrobeItemAttributes | undefined;
+  if (typeof rawAttributes === "string") {
+    let json: unknown;
+    try {
+      json = JSON.parse(rawAttributes);
+    } catch {
+      json = undefined;
+    }
+    const parsed = wardrobeItemAttributesSchema.safeParse(json);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: "The item details were invalid." },
+        { status: 400 },
+      );
+    }
+    attributes = parsed.data;
+  }
+
   try {
     const userId = await getCurrentUserId();
-    const item = await ingestWardrobeItem(file, userId);
+    const item = await ingestWardrobeItem(file, userId, attributes);
     return NextResponse.json({ item }, { status: 201 });
   } catch (error) {
     if (error instanceof UploadValidationError) {

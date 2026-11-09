@@ -86,6 +86,24 @@ describe("ingestWardrobeItem", () => {
     expect(ingestionMocks.deleteStoredImage).not.toHaveBeenCalled();
   });
 
+  it("skips vision analysis when attributes are already known", async () => {
+    const file = imageFile();
+
+    await expect(
+      ingestWardrobeItem(file, createdItem.userId, {
+        ...attributes,
+        season: [...attributes.season],
+      }),
+    ).resolves.toEqual(createdItem);
+
+    expect(ingestionMocks.analyzeWardrobeItem).not.toHaveBeenCalled();
+    expect(ingestionMocks.values).toHaveBeenCalledWith({
+      userId: createdItem.userId,
+      imageUrl: upload.url,
+      ...attributes,
+    });
+  });
+
   it("deletes the stored image when vision analysis fails", async () => {
     ingestionMocks.analyzeWardrobeItem.mockRejectedValue(
       new Error("vision unavailable"),
