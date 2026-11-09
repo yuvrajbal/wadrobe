@@ -259,13 +259,13 @@ export function OutfitBuilder({
     <main className="min-h-screen pb-32 md:pb-16">
       <div className="mx-auto w-full max-w-7xl px-5 py-9 sm:px-8 sm:py-14">
         <section className="max-w-3xl">
-          <p className="text-xs font-semibold tracking-[0.18em] text-emerald-700 uppercase">
+          <p className="text-xs font-semibold tracking-[0.18em] text-emerald-700 uppercase dark:text-emerald-300">
             Manual outfit builder
           </p>
-          <h1 className="mt-3 text-4xl leading-none font-semibold tracking-[-0.045em] text-emerald-950 sm:text-6xl">
+          <h1 className="mt-3 text-4xl leading-none font-semibold tracking-[-0.045em] text-ink sm:text-6xl">
             Build it piece by piece.
           </h1>
-          <p className="mt-4 max-w-xl text-sm leading-6 text-emerald-950/60 sm:text-base">
+          <p className="mt-4 max-w-xl text-sm leading-6 text-ink/60 sm:text-base">
             Start with the essentials, then layer if you want. Only available
             pieces appear in your picker.
           </p>
@@ -274,15 +274,17 @@ export function OutfitBuilder({
         {loadState === "loading" ? <BuilderSkeleton /> : null}
 
         {loadState === "error" ? (
-          <div className="mt-10 rounded-3xl border border-red-900/10 bg-red-50/70 p-7">
-            <p className="font-semibold text-red-950">
+          <div className="mt-10 rounded-3xl border border-red-900/10 bg-red-50/70 p-7 dark:border-red-300/15 dark:bg-red-950/40">
+            <p className="font-semibold text-red-950 dark:text-red-100">
               Couldn’t open your wardrobe.
             </p>
-            <p className="mt-2 text-sm text-red-950/65">{loadError}</p>
+            <p className="mt-2 text-sm text-red-950/65 dark:text-red-100/65">
+              {loadError}
+            </p>
             <button
               type="button"
               onClick={() => void loadItems()}
-              className="mt-5 rounded-full bg-red-950 px-5 py-2.5 text-sm font-semibold text-white"
+              className="mt-5 rounded-full bg-red-950 px-5 py-2.5 text-sm font-semibold text-white dark:bg-red-800"
             >
               Try again
             </button>
@@ -290,17 +292,17 @@ export function OutfitBuilder({
         ) : null}
 
         {loadState === "ready" && items.length === 0 ? (
-          <div className="mt-10 rounded-[2rem] border border-dashed border-emerald-950/20 bg-white/40 px-6 py-14 text-center">
-            <h2 className="text-2xl font-semibold tracking-[-0.03em] text-emerald-950">
+          <div className="mt-10 rounded-[2rem] border border-dashed border-ink/20 bg-card/40 px-6 py-14 text-center">
+            <h2 className="text-2xl font-semibold tracking-[-0.03em] text-ink">
               Your available wardrobe is empty
             </h2>
-            <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-emerald-950/55">
+            <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-ink/55">
               Add garments or mark existing pieces as available before building
               an outfit.
             </p>
             <Link
               href="/"
-              className="mt-5 inline-flex rounded-full bg-emerald-950 px-5 py-3 text-sm font-semibold text-white"
+              className="mt-5 inline-flex rounded-full bg-brand px-5 py-3 text-sm font-semibold text-white"
             >
               Open wardrobe
             </Link>
@@ -309,13 +311,13 @@ export function OutfitBuilder({
 
         {loadState === "ready" && items.length > 0 ? (
           <div className="mt-9 grid gap-6 lg:grid-cols-[minmax(0,1.35fr)_minmax(19rem,0.65fr)] lg:items-start">
-            <section className="rounded-[2rem] border border-emerald-950/10 bg-white/55 p-3 shadow-[0_30px_80px_-60px_rgba(6,78,59,0.7)] sm:p-5">
+            <section className="rounded-[2rem] border border-ink/10 bg-card/55 p-3 shadow-[0_30px_80px_-60px_rgba(6,78,59,0.7)] sm:p-5">
               <div className="mb-4 flex items-center justify-between px-2 pt-1">
                 <div>
-                  <h2 className="text-lg font-semibold tracking-[-0.02em] text-emerald-950">
+                  <h2 className="text-lg font-semibold tracking-[-0.02em] text-ink">
                     Outfit board
                   </h2>
-                  <p className="mt-0.5 text-xs text-emerald-950/45">
+                  <p className="mt-0.5 text-xs text-ink/45">
                     {selectedItems.length} of {slots.length} slots filled
                   </p>
                 </div>
@@ -326,7 +328,7 @@ export function OutfitBuilder({
                       setSelection({});
                       resetRequestStates();
                     }}
-                    className="rounded-full px-3 py-2 text-xs font-semibold text-emerald-800 hover:bg-emerald-950/5"
+                    className="rounded-full px-3 py-2 text-xs font-semibold text-emerald-800 hover:bg-ink/5 dark:text-emerald-300"
                   >
                     Clear all
                   </button>
@@ -353,7 +355,7 @@ export function OutfitBuilder({
               </div>
             </section>
 
-            <aside className="rounded-[2rem] bg-emerald-950 p-5 text-white sm:p-6 lg:sticky lg:top-24">
+            <aside className="rounded-[2rem] bg-brand p-5 text-white sm:p-6 lg:sticky lg:top-24">
               <p className="text-xs font-semibold tracking-[0.16em] text-emerald-200 uppercase">
                 Finishing touch
               </p>
@@ -454,14 +456,14 @@ function OutfitSlot({
       <button
         type="button"
         onClick={onPick}
-        className="group flex min-h-52 flex-col items-center justify-center rounded-[1.5rem] border border-dashed border-emerald-950/20 bg-[#f7f5ef]/65 p-5 text-center transition hover:border-emerald-700/45 hover:bg-emerald-50/60 sm:min-h-64"
+        className="group flex min-h-52 flex-col items-center justify-center rounded-[1.5rem] border border-dashed border-ink/20 bg-sheet/65 p-5 text-center transition hover:border-emerald-700/45 hover:bg-emerald-50/60 sm:min-h-64 dark:hover:border-emerald-400/45 dark:hover:bg-emerald-400/10"
       >
-        <span className="grid h-11 w-11 place-items-center rounded-full bg-emerald-950/6 text-xl text-emerald-900 transition group-hover:bg-emerald-900 group-hover:text-white">
+        <span className="grid h-11 w-11 place-items-center rounded-full bg-ink/6 text-xl text-emerald-900 transition group-hover:bg-emerald-900 group-hover:text-white dark:text-emerald-300 dark:group-hover:text-white">
           +
         </span>
-        <span className="mt-4 font-semibold text-emerald-950">{label}</span>
-        <span className="mt-1 text-xs text-emerald-950/45">{hint}</span>
-        <span className="mt-3 rounded-full bg-white px-2.5 py-1 text-[0.65rem] font-semibold tracking-wide text-emerald-800 uppercase">
+        <span className="mt-4 font-semibold text-ink">{label}</span>
+        <span className="mt-1 text-xs text-ink/45">{hint}</span>
+        <span className="mt-3 rounded-full bg-card px-2.5 py-1 text-[0.65rem] font-semibold tracking-wide text-emerald-800 uppercase dark:text-emerald-300">
           {required ? "Required" : "Optional"}
         </span>
       </button>
@@ -469,8 +471,8 @@ function OutfitSlot({
   }
 
   return (
-    <article className="overflow-hidden rounded-[1.5rem] border border-emerald-950/10 bg-white shadow-sm">
-      <div className="relative aspect-[4/5] bg-emerald-950/5">
+    <article className="overflow-hidden rounded-[1.5rem] border border-ink/10 bg-card shadow-sm">
+      <div className="relative aspect-[4/5] bg-ink/5">
         <Image
           src={item.imageUrl}
           unoptimized
@@ -484,17 +486,15 @@ function OutfitSlot({
         </span>
       </div>
       <div className="p-3.5">
-        <p className="truncate text-sm font-semibold text-emerald-950">
-          {item.name}
-        </p>
-        <p className="mt-1 truncate text-xs text-emerald-950/45 capitalize">
+        <p className="truncate text-sm font-semibold text-ink">{item.name}</p>
+        <p className="mt-1 truncate text-xs text-ink/45 capitalize">
           {item.colors.join(", ")} · {item.pattern}
         </p>
         <div className="mt-3 flex gap-2">
           <button
             type="button"
             onClick={onPick}
-            className="flex-1 rounded-full bg-emerald-950 px-3 py-2 text-xs font-semibold text-white"
+            className="flex-1 rounded-full bg-brand px-3 py-2 text-xs font-semibold text-white"
           >
             Replace
           </button>
@@ -502,7 +502,7 @@ function OutfitSlot({
             type="button"
             onClick={onRemove}
             aria-label={`Remove ${item.name}`}
-            className="grid h-8 w-8 place-items-center rounded-full border border-emerald-950/10 text-emerald-950/55"
+            className="grid h-8 w-8 place-items-center rounded-full border border-ink/10 text-ink/55"
           >
             ×
           </button>
@@ -578,21 +578,21 @@ function ItemPicker({
         role="dialog"
         aria-modal="true"
         aria-label={`Choose ${category}`}
-        className="max-h-[88vh] min-h-0 w-full overflow-y-auto rounded-t-[2rem] bg-[#f7f5ef] shadow-2xl sm:max-w-4xl sm:rounded-[2rem]"
+        className="max-h-[88vh] min-h-0 w-full overflow-y-auto rounded-t-[2rem] bg-sheet shadow-2xl sm:max-w-4xl sm:rounded-[2rem]"
       >
-        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-emerald-950/10 bg-[#f7f5ef]/95 px-5 py-4 backdrop-blur sm:px-7">
+        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-ink/10 bg-sheet/95 px-5 py-4 backdrop-blur sm:px-7">
           <div>
-            <h2 className="text-lg font-semibold tracking-[-0.02em] text-emerald-950 capitalize">
+            <h2 className="text-lg font-semibold tracking-[-0.02em] text-ink capitalize">
               Choose {category}
             </h2>
-            <p className="text-xs text-emerald-950/45">Available pieces only</p>
+            <p className="text-xs text-ink/45">Available pieces only</p>
           </div>
           <button
             ref={closeButtonRef}
             type="button"
             aria-label="Close picker"
             onClick={onClose}
-            className="grid h-10 w-10 place-items-center rounded-full border border-emerald-950/10 bg-white/60 text-xl text-emerald-950"
+            className="grid h-10 w-10 place-items-center rounded-full border border-ink/10 bg-card/60 text-xl text-ink"
           >
             ×
           </button>
@@ -606,13 +606,13 @@ function ItemPicker({
                 key={item.id}
                 aria-pressed={selectedId === item.id}
                 onClick={() => onChoose(item)}
-                className={`overflow-hidden rounded-3xl border bg-white text-left transition hover:-translate-y-0.5 ${
+                className={`overflow-hidden rounded-3xl border bg-card text-left transition hover:-translate-y-0.5 ${
                   selectedId === item.id
-                    ? "border-emerald-800 ring-4 ring-emerald-800/10"
-                    : "border-emerald-950/10"
+                    ? "border-emerald-800 ring-4 ring-emerald-800/10 dark:border-emerald-400 dark:ring-emerald-400/10"
+                    : "border-ink/10"
                 }`}
               >
-                <div className="relative aspect-[4/5] bg-emerald-950/5">
+                <div className="relative aspect-[4/5] bg-ink/5">
                   <Image
                     src={item.imageUrl}
                     unoptimized
@@ -623,10 +623,10 @@ function ItemPicker({
                   />
                 </div>
                 <div className="p-3.5">
-                  <p className="truncate text-sm font-semibold text-emerald-950">
+                  <p className="truncate text-sm font-semibold text-ink">
                     {item.name}
                   </p>
-                  <p className="mt-1 truncate text-xs text-emerald-950/45 capitalize">
+                  <p className="mt-1 truncate text-xs text-ink/45 capitalize">
                     {item.colors.join(", ")}
                   </p>
                 </div>
@@ -635,10 +635,10 @@ function ItemPicker({
           </div>
         ) : (
           <div className="p-12 text-center">
-            <p className="font-semibold text-emerald-950 capitalize">
+            <p className="font-semibold text-ink capitalize">
               No available {category} items
             </p>
-            <p className="mt-2 text-sm text-emerald-950/50">
+            <p className="mt-2 text-sm text-ink/50">
               Add one in your wardrobe, then return to the builder.
             </p>
           </div>
@@ -679,15 +679,15 @@ function CritiqueCard({ critique }: { critique: Critique }) {
 function BuilderSkeleton() {
   return (
     <div className="mt-9 grid gap-6 lg:grid-cols-[1.35fr_0.65fr]">
-      <div className="grid grid-cols-2 gap-3 rounded-[2rem] bg-white/45 p-5 sm:grid-cols-3">
+      <div className="grid grid-cols-2 gap-3 rounded-[2rem] bg-card/45 p-5 sm:grid-cols-3">
         {slots.map((slot) => (
           <div
             key={slot.category}
-            className="aspect-[4/5] animate-pulse rounded-3xl bg-emerald-950/8"
+            className="aspect-[4/5] animate-pulse rounded-3xl bg-ink/8"
           />
         ))}
       </div>
-      <div className="h-72 animate-pulse rounded-[2rem] bg-emerald-950/15" />
+      <div className="h-72 animate-pulse rounded-[2rem] bg-ink/15" />
     </div>
   );
 }

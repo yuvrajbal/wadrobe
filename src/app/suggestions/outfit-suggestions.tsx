@@ -33,7 +33,7 @@ type Suggestion = { itemIds: string[]; rationale: string };
 type DecisionState = "loading" | "saved" | "rejected" | "error";
 
 const fieldClass =
-  "mt-2 w-full rounded-2xl border border-emerald-950/15 bg-white px-4 py-3 text-sm text-emerald-950 outline-none transition placeholder:text-emerald-950/35 focus:border-emerald-700 focus:ring-4 focus:ring-emerald-700/10";
+  "mt-2 w-full rounded-2xl border border-ink/15 bg-card px-4 py-3 text-sm text-ink outline-none transition placeholder:text-ink/35 focus:border-emerald-700 dark:focus:border-emerald-400 focus:ring-4 focus:ring-emerald-700/10 dark:focus:ring-emerald-400/10";
 
 async function responseError(response: Response, fallback: string) {
   const body = (await response.json().catch(() => null)) as {
@@ -287,13 +287,13 @@ export function OutfitSuggestions() {
     <main className="min-h-screen pb-32 md:pb-16">
       <div className="mx-auto w-full max-w-7xl px-5 py-9 sm:px-8 sm:py-14">
         <section className="max-w-3xl">
-          <p className="text-xs font-semibold tracking-[0.18em] text-emerald-700 uppercase">
+          <p className="text-xs font-semibold tracking-[0.18em] text-emerald-700 uppercase dark:text-emerald-300">
             Context-aware suggestions
           </p>
-          <h1 className="mt-3 text-4xl leading-none font-semibold tracking-[-0.045em] text-emerald-950 sm:text-6xl">
+          <h1 className="mt-3 text-4xl leading-none font-semibold tracking-[-0.045em] text-ink sm:text-6xl">
             Dress for the actual day.
           </h1>
-          <p className="mt-4 max-w-xl text-sm leading-6 text-emerald-950/60 sm:text-base">
+          <p className="mt-4 max-w-xl text-sm leading-6 text-ink/60 sm:text-base">
             Tell Wadrobe where you’re going and how you want to feel. It will
             combine only pieces currently available to wear.
           </p>
@@ -302,13 +302,13 @@ export function OutfitSuggestions() {
         <div className="mt-9 grid gap-7 lg:grid-cols-[minmax(18rem,0.72fr)_minmax(0,1.28fr)] lg:items-start">
           <form
             onSubmit={requestSuggestions}
-            className="rounded-[2rem] border border-emerald-950/10 bg-white/60 p-5 sm:p-7 lg:sticky lg:top-24"
+            className="rounded-[2rem] border border-ink/10 bg-card/60 p-5 sm:p-7 lg:sticky lg:top-24"
           >
-            <h2 className="text-xl font-semibold tracking-[-0.025em] text-emerald-950">
+            <h2 className="text-xl font-semibold tracking-[-0.025em] text-ink">
               What’s the plan?
             </h2>
             <div className="mt-6 grid gap-5">
-              <label className="text-sm font-semibold text-emerald-950/75">
+              <label className="text-sm font-semibold text-ink/75">
                 Occasion
                 <input
                   className={fieldClass}
@@ -319,7 +319,7 @@ export function OutfitSuggestions() {
                 />
               </label>
 
-              <label className="text-sm font-semibold text-emerald-950/75">
+              <label className="text-sm font-semibold text-ink/75">
                 Temperature
                 <div className="relative">
                   <input
@@ -332,7 +332,7 @@ export function OutfitSuggestions() {
                     placeholder="72"
                     onChange={(event) => setTemperature(event.target.value)}
                   />
-                  <span className="absolute top-[1.15rem] right-4 text-sm font-semibold text-emerald-950/45">
+                  <span className="absolute top-[1.15rem] right-4 text-sm font-semibold text-ink/45">
                     °F
                   </span>
                 </div>
@@ -341,7 +341,7 @@ export function OutfitSuggestions() {
                 type="button"
                 disabled={weatherState === "loading"}
                 onClick={useLocalWeather}
-                className="-mt-2 self-start rounded-full border border-emerald-950/15 bg-[#f7f5ef] px-4 py-2.5 text-xs font-semibold text-emerald-900 disabled:opacity-60"
+                className="-mt-2 self-start rounded-full border border-ink/15 bg-sheet px-4 py-2.5 text-xs font-semibold text-emerald-900 disabled:opacity-60 dark:text-emerald-300"
               >
                 {weatherState === "loading"
                   ? "Finding weather…"
@@ -351,8 +351,8 @@ export function OutfitSuggestions() {
                 <p
                   className={`-mt-3 text-xs leading-5 ${
                     weatherState === "error"
-                      ? "text-red-800"
-                      : "text-emerald-700"
+                      ? "text-red-800 dark:text-red-300"
+                      : "text-emerald-700 dark:text-emerald-300"
                   }`}
                 >
                   {weatherMessage}
@@ -362,13 +362,13 @@ export function OutfitSuggestions() {
                 href="https://open-meteo.com/"
                 target="_blank"
                 rel="noreferrer"
-                className="-mt-4 text-[0.68rem] text-emerald-950/35 underline decoration-emerald-950/20 underline-offset-2"
+                className="-mt-4 text-[0.68rem] text-ink/35 underline decoration-ink/20 underline-offset-2"
               >
                 Weather by Open-Meteo
               </a>
 
               <fieldset>
-                <legend className="text-sm font-semibold text-emerald-950/75">
+                <legend className="text-sm font-semibold text-ink/75">
                   Walking level
                 </legend>
                 <div className="mt-2 grid grid-cols-3 gap-2">
@@ -380,8 +380,8 @@ export function OutfitSuggestions() {
                       onClick={() => setWalkingLevel(level)}
                       className={`rounded-2xl px-2 py-3 text-xs font-semibold capitalize transition ${
                         walkingLevel === level
-                          ? "bg-emerald-950 text-white"
-                          : "border border-emerald-950/10 bg-white text-emerald-950/55"
+                          ? "bg-brand text-white"
+                          : "border border-ink/10 bg-card text-ink/55"
                       }`}
                     >
                       {level}
@@ -390,7 +390,7 @@ export function OutfitSuggestions() {
                 </div>
               </fieldset>
 
-              <label className="text-sm font-semibold text-emerald-950/75">
+              <label className="text-sm font-semibold text-ink/75">
                 Style direction
                 <input
                   className={fieldClass}
@@ -405,7 +405,7 @@ export function OutfitSuggestions() {
             {requestError ? (
               <p
                 role="alert"
-                className="mt-5 rounded-2xl bg-red-50 px-4 py-3 text-sm leading-5 text-red-900"
+                className="mt-5 rounded-2xl bg-red-50 px-4 py-3 text-sm leading-5 text-red-900 dark:bg-red-950/40 dark:text-red-200"
               >
                 {requestError}
               </p>
@@ -418,7 +418,7 @@ export function OutfitSuggestions() {
                 itemsState !== "ready" ||
                 !hasCoreWardrobe
               }
-              className="mt-6 min-h-12 w-full rounded-full bg-emerald-950 px-5 py-3 text-sm font-semibold text-white disabled:cursor-wait disabled:opacity-60"
+              className="mt-6 min-h-12 w-full rounded-full bg-brand px-5 py-3 text-sm font-semibold text-white disabled:cursor-wait disabled:opacity-60"
             >
               {requestState === "loading"
                 ? "Building looks…"
@@ -430,17 +430,17 @@ export function OutfitSuggestions() {
             {itemsState === "loading" ? <SuggestionSkeleton /> : null}
 
             {itemsState === "error" ? (
-              <div className="rounded-[2rem] bg-red-50 p-7 text-red-950">
+              <div className="rounded-[2rem] bg-red-50 p-7 text-red-950 dark:bg-red-950/40 dark:text-red-100">
                 <h2 className="font-semibold">
                   Your wardrobe could not be loaded.
                 </h2>
-                <p className="mt-2 text-sm text-red-950/60">
+                <p className="mt-2 text-sm text-red-950/60 dark:text-red-100/60">
                   Try again without losing the context you entered.
                 </p>
                 <button
                   type="button"
                   onClick={() => void loadItems()}
-                  className="mt-5 rounded-full bg-red-950 px-5 py-2.5 text-sm font-semibold text-white"
+                  className="mt-5 rounded-full bg-red-950 px-5 py-2.5 text-sm font-semibold text-white dark:bg-red-800"
                 >
                   Try again
                 </button>
@@ -448,17 +448,17 @@ export function OutfitSuggestions() {
             ) : null}
 
             {itemsState === "ready" && !hasCoreWardrobe ? (
-              <div className="rounded-[2rem] border border-dashed border-emerald-950/20 bg-white/40 p-8 text-center sm:p-12">
-                <h2 className="text-2xl font-semibold tracking-[-0.03em] text-emerald-950">
+              <div className="rounded-[2rem] border border-dashed border-ink/20 bg-card/40 p-8 text-center sm:p-12">
+                <h2 className="text-2xl font-semibold tracking-[-0.03em] text-ink">
                   Complete your core wardrobe
                 </h2>
-                <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-emerald-950/55">
+                <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-ink/55">
                   Suggestions need at least one available top, bottom, and pair
                   of shoes.
                 </p>
                 <Link
                   href="/"
-                  className="mt-5 inline-flex rounded-full bg-emerald-950 px-5 py-3 text-sm font-semibold text-white"
+                  className="mt-5 inline-flex rounded-full bg-brand px-5 py-3 text-sm font-semibold text-white"
                 >
                   Open wardrobe
                 </Link>
@@ -468,7 +468,7 @@ export function OutfitSuggestions() {
             {itemsState === "ready" &&
             hasCoreWardrobe &&
             requestState === "idle" ? (
-              <div className="rounded-[2rem] border border-emerald-950/10 bg-emerald-950 p-8 text-white sm:p-12">
+              <div className="rounded-[2rem] border border-ink/10 bg-brand p-8 text-white sm:p-12">
                 <span className="text-3xl text-emerald-200">✦</span>
                 <h2 className="mt-5 text-3xl font-semibold tracking-[-0.035em]">
                   Your wardrobe is ready to work.
@@ -486,10 +486,10 @@ export function OutfitSuggestions() {
               <div className="grid gap-5">
                 <div className="flex items-end justify-between px-1">
                   <div>
-                    <p className="text-xs font-semibold tracking-[0.14em] text-emerald-700 uppercase">
+                    <p className="text-xs font-semibold tracking-[0.14em] text-emerald-700 uppercase dark:text-emerald-300">
                       Your options
                     </p>
-                    <h2 className="mt-1 text-2xl font-semibold tracking-[-0.03em] text-emerald-950">
+                    <h2 className="mt-1 text-2xl font-semibold tracking-[-0.03em] text-ink">
                       {suggestions.length} considered looks
                     </h2>
                   </div>
@@ -540,7 +540,7 @@ function SuggestionCard({
 
   return (
     <article
-      className={`overflow-hidden rounded-[2rem] border border-emerald-950/10 bg-white/65 p-4 transition sm:p-5 ${
+      className={`overflow-hidden rounded-[2rem] border border-ink/10 bg-card/65 p-4 transition sm:p-5 ${
         decision === "rejected" ? "opacity-60" : ""
       }`}
     >
@@ -548,7 +548,7 @@ function SuggestionCard({
         {items.map((item) => (
           <div
             key={item.id}
-            className="relative aspect-[4/5] overflow-hidden rounded-2xl bg-emerald-950/5"
+            className="relative aspect-[4/5] overflow-hidden rounded-2xl bg-ink/5"
           >
             <Image
               src={item.imageUrl}
@@ -565,10 +565,10 @@ function SuggestionCard({
         ))}
       </div>
       <div className="px-1 pt-5">
-        <p className="text-xs font-semibold tracking-[0.14em] text-emerald-700 uppercase">
+        <p className="text-xs font-semibold tracking-[0.14em] text-emerald-700 uppercase dark:text-emerald-300">
           Look {index + 1}
         </p>
-        <p className="mt-2 text-sm leading-6 text-emerald-950/65">
+        <p className="mt-2 text-sm leading-6 text-ink/65">
           {suggestion.rationale}
         </p>
 
@@ -577,7 +577,7 @@ function SuggestionCard({
             type="button"
             disabled={Boolean(decision && decision !== "error")}
             onClick={onSave}
-            className="rounded-full bg-emerald-950 px-3 py-2.5 text-xs font-semibold text-white disabled:opacity-60"
+            className="rounded-full bg-brand px-3 py-2.5 text-xs font-semibold text-white disabled:opacity-60"
           >
             {decision === "loading"
               ? "Saving…"
@@ -589,19 +589,21 @@ function SuggestionCard({
             type="button"
             disabled={Boolean(decision && decision !== "error")}
             onClick={onReject}
-            className="rounded-full border border-emerald-950/15 bg-white px-3 py-2.5 text-xs font-semibold text-emerald-950 disabled:opacity-60"
+            className="rounded-full border border-ink/15 bg-card px-3 py-2.5 text-xs font-semibold text-ink disabled:opacity-60"
           >
             {decision === "rejected" ? "Noted ✓" : "Not for me"}
           </button>
           <Link
             href={`/builder?${builderQuery}`}
-            className="grid place-items-center rounded-full border border-emerald-950/15 px-3 py-2.5 text-center text-xs font-semibold text-emerald-950"
+            className="grid place-items-center rounded-full border border-ink/15 px-3 py-2.5 text-center text-xs font-semibold text-ink"
           >
             Tweak
           </Link>
         </div>
         {decisionError ? (
-          <p className="mt-3 text-xs text-red-800">{decisionError}</p>
+          <p className="mt-3 text-xs text-red-800 dark:text-red-300">
+            {decisionError}
+          </p>
         ) : null}
       </div>
     </article>
@@ -614,7 +616,7 @@ function SuggestionSkeleton() {
       {Array.from({ length: 2 }, (_, index) => (
         <div
           key={index}
-          className="h-72 animate-pulse rounded-[2rem] bg-emerald-950/8"
+          className="h-72 animate-pulse rounded-[2rem] bg-ink/8"
         />
       ))}
     </div>
