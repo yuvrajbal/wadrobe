@@ -11,6 +11,7 @@ import {
   useState,
 } from "react";
 
+import { forEachWithConcurrency } from "@/lib/concurrency";
 import { notifications, safeNotificationMessage } from "@/lib/notifications";
 import {
   ACCEPTED_IMAGE_TYPES,
@@ -50,6 +51,19 @@ type WardrobeItem = {
   createdAt: string;
 };
 
+type PendingPhoto = {
+  id: number;
+  file: File;
+  previewUrl: string;
+  status: "ready" | "uploading" | "failed";
+  error: string;
+};
+
+// Each photo is analyzed by the vision model, so keep batches and parallel
+// requests small enough to stay quick and affordable.
+const MAX_PHOTOS_PER_BATCH = 12;
+const UPLOAD_CONCURRENCY = 3;
+
 type ItemDraft = {
   name: string;
   category: WardrobeCategory;
@@ -71,6 +85,30 @@ async function responseError(response: Response, fallback: string) {
     error?: string;
   } | null;
   return body?.error ?? fallback;
+}
+
+async function createWardrobeItem(file: File): Promise<WardrobeItem> {
+  const formData = new FormData();
+  formData.set("file", await prepareImageForUpload(file));
+
+  const response = await fetch("/api/items", {
+    method: "POST",
+    body: formData,
+  });
+
+  if (!response.ok) {
+    throw new Error(
+      await responseError(response, "The garment could not be analyzed."),
+    );
+  }
+
+  const body = (await response.json()) as { item: WardrobeItem };
+  if (!body.item?.id) {
+    throw new Error(
+      "The garment was analyzed, but its wardrobe details were incomplete. Please try again.",
+    );
+  }
+  return body.item;
 }
 
 function itemDraft(item: WardrobeItem): ItemDraft {
@@ -98,17 +136,17 @@ export function WardrobeApp() {
     "loading",
   );
   const [loadError, setLoadError] = useState("");
-  const [pendingUpload, setPendingUpload] = useState<{
-    file: File;
-    previewUrl: string;
-  } | null>(null);
-  const previewUrlRef = useRef<string | null>(null);
-  const fileSelectionRef = useRef(0);
+  const [pendingPhotos, setPendingPhotos] = useState<PendingPhoto[]>([]);
+  // Mirrors pendingPhotos so object URLs can be revoked on unmount.
+  const pendingPhotosRef = useRef<PendingPhoto[]>([]);
+  // Bumped whenever the upload queue is discarded, so slow HEIC conversions
+  // from an earlier session do not reopen the dialog.
+  const uploadSessionRef = useRef(0);
+  const nextPhotoIdRef = useRef(0);
+  const [isPreparing, setIsPreparing] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
-  const [uploadError, setUploadError] = useState("");
+  const [uploadProgress, setUploadProgress] = useState({ done: 0, total: 0 });
   const [selectedItem, setSelectedItem] = useState<WardrobeItem | null>(null);
-  const pendingFile = pendingUpload?.file ?? null;
-  const previewUrl = pendingUpload?.previewUrl ?? "";
 
   const loadItems = useCallback(async (category: ItemCategory) => {
     setLoadState("loading");
@@ -153,114 +191,198 @@ export function WardrobeApp() {
   }, [activeCategory, loadItems]);
 
   useEffect(() => {
+    pendingPhotosRef.current = pendingPhotos;
+  }, [pendingPhotos]);
+
+  useEffect(() => {
     return () => {
-      if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
+      for (const photo of pendingPhotosRef.current) {
+        URL.revokeObjectURL(photo.previewUrl);
+      }
     };
   }, []);
 
-  function clearPendingUpload() {
-    if (previewUrlRef.current) {
-      URL.revokeObjectURL(previewUrlRef.current);
-      previewUrlRef.current = null;
+  function clearPendingPhotos() {
+    uploadSessionRef.current += 1;
+    for (const photo of pendingPhotosRef.current) {
+      URL.revokeObjectURL(photo.previewUrl);
     }
-    setPendingUpload(null);
+    pendingPhotosRef.current = [];
+    setPendingPhotos([]);
   }
 
-  async function chooseFile(event: ChangeEvent<HTMLInputElement>) {
-    const selected = event.target.files?.[0];
-    event.target.value = "";
-    if (!selected) return;
+  function removePendingPhoto(id: number) {
+    const photo = pendingPhotosRef.current.find((entry) => entry.id === id);
+    if (photo) URL.revokeObjectURL(photo.previewUrl);
+    setPendingPhotos((current) => current.filter((entry) => entry.id !== id));
+  }
 
-    const selection = ++fileSelectionRef.current;
-    let file = selected;
+  async function chooseFiles(event: ChangeEvent<HTMLInputElement>) {
+    const selected = Array.from(event.target.files ?? []);
+    event.target.value = "";
+    if (selected.length === 0) return;
+
+    const room = Math.max(
+      0,
+      MAX_PHOTOS_PER_BATCH - pendingPhotosRef.current.length,
+    );
+    const accepted = selected.slice(0, room);
+    if (accepted.length < selected.length) {
+      notifications.info({
+        id: "wardrobe-batch-limit",
+        title: `You can add up to ${MAX_PHOTOS_PER_BATCH} photos at a time.`,
+        description:
+          accepted.length > 0
+            ? `Only the first ${accepted.length} were added.`
+            : "Analyze or remove some photos first.",
+      });
+    }
+    if (accepted.length === 0) return;
+
+    const session = uploadSessionRef.current;
+    const hasHeic = accepted.some(isHeicFile);
+    const prepared: PendingPhoto[] = [];
+    const unreadable: string[] = [];
 
     // Most browsers cannot preview HEIC, so convert it to JPEG up front.
-    if (isHeicFile(selected)) {
+    if (hasHeic) {
+      setIsPreparing(true);
       notifications.info({
         id: "wardrobe-convert",
-        title: "Converting your photo…",
+        title:
+          accepted.length > 1
+            ? "Converting your photos…"
+            : "Converting your photo…",
       });
-      try {
-        file = await prepareImageForUpload(selected);
-        notifications.dismiss("wardrobe-convert");
-      } catch (error) {
-        if (selection !== fileSelectionRef.current) return;
-        notifications.error({
-          id: "wardrobe-convert",
-          title: "Couldn’t open that photo.",
-          description: safeNotificationMessage(
-            error instanceof Error ? error.message : null,
-            "This photo could not be read. Try a JPEG, PNG, or WebP image.",
-          ),
-        });
-        return;
-      }
     }
-
-    // A newer selection arrived while this one was converting.
-    if (selection !== fileSelectionRef.current) return;
-
-    if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
-
-    const preview = URL.createObjectURL(file);
-    previewUrlRef.current = preview;
-    setUploadError("");
-    setPendingUpload({ file, previewUrl: preview });
-  }
-
-  async function uploadItem() {
-    if (!pendingFile) return;
-
-    setIsUploading(true);
-    setUploadError("");
 
     try {
-      const formData = new FormData();
-      formData.set("file", await prepareImageForUpload(pendingFile));
+      for (const original of accepted) {
+        let file = original;
+        if (isHeicFile(original)) {
+          try {
+            file = await prepareImageForUpload(original);
+          } catch {
+            unreadable.push(original.name);
+            continue;
+          }
+        }
+        nextPhotoIdRef.current += 1;
+        prepared.push({
+          id: nextPhotoIdRef.current,
+          file,
+          previewUrl: URL.createObjectURL(file),
+          status: "ready",
+          error: "",
+        });
+      }
+    } finally {
+      if (hasHeic) setIsPreparing(false);
+    }
 
-      const response = await fetch("/api/items", {
-        method: "POST",
-        body: formData,
+    // The dialog was closed while photos were converting.
+    if (session !== uploadSessionRef.current) {
+      for (const photo of prepared) URL.revokeObjectURL(photo.previewUrl);
+      return;
+    }
+
+    if (unreadable.length > 0) {
+      notifications.error({
+        id: "wardrobe-convert",
+        title:
+          unreadable.length > 1
+            ? `Couldn’t open ${unreadable.length} photos.`
+            : "Couldn’t open that photo.",
+        description:
+          unreadable.length > 1
+            ? `${unreadable.join(", ")} could not be read. Try JPEG, PNG, or WebP images.`
+            : "This photo could not be read. Try a JPEG, PNG, or WebP image.",
       });
+    } else if (hasHeic) {
+      notifications.dismiss("wardrobe-convert");
+    }
 
-      if (!response.ok) {
-        throw new Error(
-          await responseError(response, "The garment could not be analyzed."),
+    if (prepared.length > 0) {
+      const next = [...pendingPhotosRef.current, ...prepared];
+      pendingPhotosRef.current = next;
+      setPendingPhotos(next);
+    }
+  }
+
+  async function uploadPendingPhotos() {
+    const queue = pendingPhotosRef.current.filter(
+      (photo) => photo.status !== "uploading",
+    );
+    if (queue.length === 0 || isUploading) return;
+
+    setIsUploading(true);
+    setUploadProgress({ done: 0, total: queue.length });
+    setPendingPhotos((current) =>
+      current.map((photo) => ({ ...photo, status: "uploading", error: "" })),
+    );
+
+    let added = 0;
+    const failures: string[] = [];
+
+    await forEachWithConcurrency(queue, UPLOAD_CONCURRENCY, async (photo) => {
+      try {
+        const createdItem = await createWardrobeItem(photo.file);
+        added += 1;
+
+        if (
+          activeCategory === "all" ||
+          createdItem.category === activeCategory
+        ) {
+          setItems((current) => [createdItem, ...current]);
+        }
+
+        URL.revokeObjectURL(photo.previewUrl);
+        setPendingPhotos((current) =>
+          current.filter((entry) => entry.id !== photo.id),
         );
-      }
-
-      const body = (await response.json()) as { item: WardrobeItem };
-      const createdItem = body.item;
-
-      if (!createdItem?.id) {
-        throw new Error(
-          "The garment was analyzed, but its wardrobe details were incomplete. Please try again.",
+      } catch (error) {
+        const message = safeNotificationMessage(
+          error instanceof Error ? error.message : null,
+          "The garment could not be analyzed. Try another photo.",
         );
+        failures.push(message);
+        setPendingPhotos((current) =>
+          current.map((entry) =>
+            entry.id === photo.id
+              ? { ...entry, status: "failed", error: message }
+              : entry,
+          ),
+        );
+      } finally {
+        setUploadProgress((current) => ({
+          ...current,
+          done: current.done + 1,
+        }));
       }
+    });
 
-      if (activeCategory === "all" || createdItem.category === activeCategory) {
-        setItems((current) => [createdItem, ...current]);
-      }
+    setIsUploading(false);
 
-      clearPendingUpload();
+    if (failures.length === 0) {
       notifications.success({
         id: "wardrobe-upload",
-        title: "Garment added to your wardrobe.",
+        title:
+          added === 1
+            ? "Garment added to your wardrobe."
+            : `${added} garments added to your wardrobe.`,
       });
-    } catch (error) {
-      const message = safeNotificationMessage(
-        error instanceof Error ? error.message : null,
-        "The garment could not be analyzed. Try another photo.",
-      );
-      setUploadError(message);
-      notifications.error({
-        id: "wardrobe-upload",
-        title: "The garment could not be added.",
-        description: message,
-      });
-    } finally {
-      setIsUploading(false);
+      return;
     }
+
+    notifications.error({
+      id: "wardrobe-upload",
+      title:
+        queue.length === 1
+          ? "The garment could not be added."
+          : `${failures.length} of ${queue.length} photos couldn’t be added.`,
+      description:
+        added > 0 ? `${added} added. Retry or remove the rest.` : failures[0],
+    });
   }
 
   function updateItem(updatedItem: WardrobeItem) {
@@ -315,7 +437,13 @@ export function WardrobeApp() {
               >
                 Suggest a look
               </Link>
-              <label className="inline-flex min-h-12 cursor-pointer items-center justify-center gap-2 rounded-full bg-[#c7623d] px-5 py-3 text-sm font-semibold text-white shadow-[0_16px_35px_-20px_rgba(0,0,0,0.8)] transition focus-within:ring-4 focus-within:ring-white/20 hover:-translate-y-0.5 hover:bg-[#b75533]">
+              <label
+                className={`inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-[#c7623d] px-5 py-3 text-sm font-semibold text-white shadow-[0_16px_35px_-20px_rgba(0,0,0,0.8)] transition focus-within:ring-4 focus-within:ring-white/20 ${
+                  isPreparing
+                    ? "cursor-wait opacity-70"
+                    : "cursor-pointer hover:-translate-y-0.5 hover:bg-[#b75533]"
+                }`}
+              >
                 <span className="text-lg leading-none" aria-hidden="true">
                   ＋
                 </span>
@@ -324,7 +452,9 @@ export function WardrobeApp() {
                   className="sr-only"
                   type="file"
                   accept={ACCEPTED_IMAGE_TYPES}
-                  onChange={chooseFile}
+                  multiple
+                  disabled={isPreparing}
+                  onChange={chooseFiles}
                 />
               </label>
             </div>
@@ -448,17 +578,18 @@ export function WardrobeApp() {
         </section>
       </div>
 
-      {pendingFile ? (
+      {pendingPhotos.length > 0 ? (
         <UploadDialog
-          file={pendingFile}
-          previewUrl={previewUrl}
+          photos={pendingPhotos}
           isUploading={isUploading}
-          error={uploadError}
-          onChooseFile={chooseFile}
+          isPreparing={isPreparing}
+          progress={uploadProgress}
+          onChooseFiles={chooseFiles}
+          onRemove={removePendingPhoto}
           onCancel={() => {
-            if (!isUploading) clearPendingUpload();
+            if (!isUploading) clearPendingPhotos();
           }}
-          onUpload={() => void uploadItem()}
+          onUpload={() => void uploadPendingPhotos()}
         />
       ) : null}
 
@@ -711,100 +842,202 @@ function DialogShell({
 }
 
 function UploadDialog({
-  file,
-  previewUrl,
+  photos,
   isUploading,
-  error,
-  onChooseFile,
+  isPreparing,
+  progress,
+  onChooseFiles,
+  onRemove,
   onCancel,
   onUpload,
 }: {
-  file: File;
-  previewUrl: string;
+  photos: PendingPhoto[];
   isUploading: boolean;
-  error: string;
-  onChooseFile: (event: ChangeEvent<HTMLInputElement>) => void;
+  isPreparing: boolean;
+  progress: { done: number; total: number };
+  onChooseFiles: (event: ChangeEvent<HTMLInputElement>) => void;
+  onRemove: (id: number) => void;
   onCancel: () => void;
   onUpload: () => void;
 }) {
+  const isSingle = photos.length === 1;
+  const allFailed = photos.every((photo) => photo.status === "failed");
+  const canAddMore =
+    !isUploading && !isPreparing && photos.length < MAX_PHOTOS_PER_BATCH;
+
+  let uploadLabel: string;
+  if (isUploading) {
+    uploadLabel =
+      progress.total > 1
+        ? `Analyzing ${Math.min(progress.done + 1, progress.total)} of ${progress.total}…`
+        : "Analyzing…";
+  } else if (allFailed) {
+    uploadLabel = isSingle ? "Try again" : `Retry ${photos.length} items`;
+  } else {
+    uploadLabel = isSingle ? "Analyze item" : `Analyze ${photos.length} items`;
+  }
+
+  const actions = (
+    <div className="mt-6 flex gap-3">
+      <label
+        className={`flex flex-1 items-center justify-center rounded-full border border-ink/15 bg-card px-4 py-3 text-center text-sm font-semibold text-ink ${
+          canAddMore ? "cursor-pointer" : "cursor-not-allowed opacity-40"
+        }`}
+      >
+        Add more photos
+        <input
+          className="sr-only"
+          type="file"
+          accept={ACCEPTED_IMAGE_TYPES}
+          multiple
+          disabled={!canAddMore}
+          onChange={onChooseFiles}
+        />
+      </label>
+      <button
+        type="button"
+        disabled={isUploading || isPreparing}
+        onClick={onUpload}
+        className="flex-1 rounded-full bg-brand px-4 py-3 text-sm font-semibold text-white disabled:opacity-60"
+      >
+        {uploadLabel}
+      </button>
+    </div>
+  );
+
+  const intro = (
+    <>
+      <p className="text-xs font-semibold tracking-[0.15em] text-emerald-700 uppercase dark:text-emerald-300">
+        One item per photo
+      </p>
+      <h3 className="mt-3 text-3xl font-semibold tracking-[-0.035em] text-ink">
+        {isSingle
+          ? "Is the garment clear and centered?"
+          : "Is each garment clear and centered?"}
+      </h3>
+      <p className="mt-3 text-sm leading-6 text-ink/60">
+        Photos containing a full outfit are treated as one primary garment. You
+        can correct every detail after analysis.
+        {isSingle ? null : ` Up to ${MAX_PHOTOS_PER_BATCH} photos at a time.`}
+      </p>
+    </>
+  );
+
   return (
     <DialogShell
-      title="Add a garment"
+      title={isSingle ? "Add a garment" : "Add garments"}
       onClose={onCancel}
       disabled={isUploading}
     >
-      <div className="grid gap-6 p-5 sm:grid-cols-[0.9fr_1.1fr] sm:p-7">
-        <div className="relative aspect-[4/5] overflow-hidden rounded-3xl bg-ink/5">
-          {previewUrl ? (
-            <Image
-              src={previewUrl}
-              alt="Selected garment preview"
-              fill
-              unoptimized
-              className="object-cover"
-            />
-          ) : null}
-          {isUploading ? (
-            <div className="absolute inset-0 grid place-items-center bg-emerald-950/65 px-6 text-center text-white backdrop-blur-sm">
-              <div>
-                <div className="mx-auto h-9 w-9 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-                <p className="mt-4 font-semibold">Analyzing garment…</p>
-                <p className="mt-1 text-xs text-white/70">
-                  Reading color, pattern, fit, and season.
-                </p>
-              </div>
-            </div>
-          ) : null}
-        </div>
-
-        <div className="flex flex-col justify-center">
-          <p className="text-xs font-semibold tracking-[0.15em] text-emerald-700 uppercase dark:text-emerald-300">
-            One item per photo
-          </p>
-          <h3 className="mt-3 text-3xl font-semibold tracking-[-0.035em] text-ink">
-            Is the garment clear and centered?
-          </h3>
-          <p className="mt-3 text-sm leading-6 text-ink/60">
-            Photos containing a full outfit are treated as one primary garment.
-            You can correct every detail after analysis.
-          </p>
-          <p className="mt-5 truncate rounded-2xl bg-card/70 px-4 py-3 text-xs text-ink/55">
-            {file.name}
-          </p>
-
-          {error ? (
-            <p className="mt-4 rounded-2xl bg-red-50 px-4 py-3 text-sm leading-5 text-red-900 dark:bg-red-950/40 dark:text-red-200">
-              {error}
+      {isSingle ? (
+        <div className="grid gap-6 p-5 sm:grid-cols-[0.9fr_1.1fr] sm:p-7">
+          <PendingPhotoTile
+            photo={photos[0]}
+            large
+            removable={false}
+            onRemove={onRemove}
+          />
+          <div className="flex flex-col justify-center">
+            {intro}
+            <p className="mt-5 truncate rounded-2xl bg-card/70 px-4 py-3 text-xs text-ink/55">
+              {photos[0].file.name}
             </p>
-          ) : null}
-
-          <div className="mt-6 flex gap-3">
-            <label
-              className={`flex flex-1 items-center justify-center rounded-full border border-ink/15 bg-card px-4 py-3 text-sm font-semibold text-ink ${
-                isUploading ? "cursor-not-allowed opacity-40" : "cursor-pointer"
-              }`}
-            >
-              Choose another
-              <input
-                className="sr-only"
-                type="file"
-                accept={ACCEPTED_IMAGE_TYPES}
-                disabled={isUploading}
-                onChange={onChooseFile}
-              />
-            </label>
-            <button
-              type="button"
-              disabled={isUploading}
-              onClick={onUpload}
-              className="flex-1 rounded-full bg-brand px-4 py-3 text-sm font-semibold text-white disabled:opacity-60"
-            >
-              {isUploading ? "Analyzing…" : "Analyze item"}
-            </button>
+            {photos[0].error ? (
+              <p className="mt-4 rounded-2xl bg-red-50 px-4 py-3 text-sm leading-5 text-red-900 dark:bg-red-950/40 dark:text-red-200">
+                {photos[0].error}
+              </p>
+            ) : null}
+            {actions}
           </div>
         </div>
-      </div>
+      ) : (
+        <div className="p-5 sm:p-7">
+          {intro}
+          <ul className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 md:grid-cols-4">
+            {photos.map((photo) => (
+              <li key={photo.id}>
+                <PendingPhotoTile
+                  photo={photo}
+                  removable={!isUploading}
+                  onRemove={onRemove}
+                />
+                <p className="mt-2 truncate text-xs text-ink/55">
+                  {photo.file.name}
+                </p>
+                {photo.error ? (
+                  <p className="mt-1 line-clamp-3 text-xs leading-4 text-red-800 dark:text-red-300">
+                    {photo.error}
+                  </p>
+                ) : null}
+              </li>
+            ))}
+          </ul>
+          {actions}
+        </div>
+      )}
     </DialogShell>
+  );
+}
+
+function PendingPhotoTile({
+  photo,
+  large = false,
+  removable,
+  onRemove,
+}: {
+  photo: PendingPhoto;
+  large?: boolean;
+  removable: boolean;
+  onRemove: (id: number) => void;
+}) {
+  return (
+    <div
+      className={`relative aspect-[4/5] overflow-hidden bg-ink/5 ${
+        large ? "rounded-3xl" : "rounded-2xl"
+      } ${photo.status === "failed" ? "ring-2 ring-red-600/70" : ""}`}
+    >
+      <Image
+        src={photo.previewUrl}
+        alt={`Preview of ${photo.file.name}`}
+        fill
+        unoptimized
+        className="object-cover"
+      />
+      {photo.status === "uploading" ? (
+        <div className="absolute inset-0 grid place-items-center bg-emerald-950/65 px-4 text-center text-white backdrop-blur-sm">
+          <div>
+            <div
+              className={`mx-auto animate-spin rounded-full border-2 border-white/30 border-t-white ${
+                large ? "h-9 w-9" : "h-7 w-7"
+              }`}
+            />
+            <p className={`font-semibold ${large ? "mt-4" : "mt-2 text-xs"}`}>
+              Analyzing garment…
+            </p>
+            {large ? (
+              <p className="mt-1 text-xs text-white/70">
+                Reading color, pattern, fit, and season.
+              </p>
+            ) : null}
+          </div>
+        </div>
+      ) : null}
+      {photo.status === "failed" && !large ? (
+        <span className="absolute bottom-2 left-2 rounded-full bg-red-700 px-2 py-0.5 text-[0.65rem] font-semibold text-white">
+          Failed
+        </span>
+      ) : null}
+      {removable ? (
+        <button
+          type="button"
+          aria-label={`Remove ${photo.file.name}`}
+          onClick={() => onRemove(photo.id)}
+          className="absolute top-2 right-2 grid h-8 w-8 place-items-center rounded-full bg-black/55 text-lg leading-none text-white backdrop-blur transition hover:bg-black/75"
+        >
+          ×
+        </button>
+      ) : null}
+    </div>
   );
 }
 
