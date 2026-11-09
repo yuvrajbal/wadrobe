@@ -67,7 +67,9 @@ test("filters the wardrobe and edits a garment with accessible dialog behavior",
   await expect(updatedGarment).toBeFocused();
 });
 
-test("lets the user replace an upload before analysis", async ({ page }) => {
+test("lets the user add and remove photos before analysis", async ({
+  page,
+}) => {
   const created = {
     ...wardrobeItems[0],
     id: "top-2",
@@ -75,8 +77,10 @@ test("lets the user replace an upload before analysis", async ({ page }) => {
     createdAt: "2026-08-18T13:00:00.000Z",
   };
   await mockWardrobe(page, []);
+  let posts = 0;
   await page.route("**/api/items", async (route) => {
     if (route.request().method() === "POST") {
+      posts += 1;
       await route.fulfill({ status: 201, json: { item: created } });
       return;
     }
@@ -89,14 +93,20 @@ test("lets the user replace an upload before analysis", async ({ page }) => {
     mimeType: "image/png",
     buffer: Buffer.from("first"),
   });
-  const dialog = page.getByRole("dialog", { name: "Add a garment" });
-  await expect(dialog.getByText("first.png")).toBeVisible();
+  const single = page.getByRole("dialog", { name: "Add a garment" });
+  await expect(single.getByText("first.png")).toBeVisible();
 
-  await dialog.getByLabel("Choose another").setInputFiles({
+  await single.getByLabel("Add more photos").setInputFiles({
     name: "better-photo.png",
     mimeType: "image/png",
     buffer: Buffer.from("second"),
   });
+  const batch = page.getByRole("dialog", { name: "Add garments" });
+  await expect(batch.getByText("first.png")).toBeVisible();
+  await expect(batch.getByText("better-photo.png")).toBeVisible();
+
+  await batch.getByRole("button", { name: "Remove first.png" }).click();
+  const dialog = page.getByRole("dialog", { name: "Add a garment" });
   await expect(dialog.getByText("better-photo.png")).toBeVisible();
   await expect(dialog.getByText("first.png")).toHaveCount(0);
 
@@ -104,6 +114,72 @@ test("lets the user replace an upload before analysis", async ({ page }) => {
   await expect(dialog).toBeHidden();
   await expect(
     page.getByRole("button", { name: /Blue overshirt/ }),
+  ).toBeVisible();
+  expect(posts).toBe(1);
+});
+
+test("uploads several photos and keeps failures for retry", async ({
+  page,
+}) => {
+  await mockWardrobe(page, []);
+  let failNext = true;
+  await page.route("**/api/items", async (route) => {
+    if (route.request().method() !== "POST") {
+      await route.fallback();
+      return;
+    }
+    const body = route.request().postDataBuffer()?.toString("latin1") ?? "";
+    const match = body.match(/filename="([^"]+)\.png"/);
+    const name = match?.[1] ?? "unknown";
+    if (name === "blurry" && failNext) {
+      failNext = false;
+      await route.fulfill({
+        status: 422,
+        json: { error: "No garment found in this photo." },
+      });
+      return;
+    }
+    await route.fulfill({
+      status: 201,
+      json: {
+        item: {
+          ...wardrobeItems[0],
+          id: `item-${name}`,
+          name: `Garment ${name}`,
+        },
+      },
+    });
+  });
+
+  await page.goto("/");
+  await page.getByLabel("Add garment").setInputFiles(
+    ["shirt", "blurry", "jeans"].map((name) => ({
+      name: `${name}.png`,
+      mimeType: "image/png",
+      buffer: Buffer.from(name),
+    })),
+  );
+
+  const dialog = page.getByRole("dialog", { name: "Add garments" });
+  await dialog.getByRole("button", { name: "Analyze 3 items" }).click();
+
+  await expect(
+    page.getByRole("button", { name: /Garment shirt/ }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: /Garment jeans/ }),
+  ).toBeVisible();
+
+  const retryDialog = page.getByRole("dialog", { name: "Add a garment" });
+  await expect(retryDialog.getByText("blurry.png")).toBeVisible();
+  await expect(
+    retryDialog.getByText("No garment found in this photo."),
+  ).toBeVisible();
+
+  await retryDialog.getByRole("button", { name: "Try again" }).click();
+  await expect(retryDialog).toBeHidden();
+  await expect(
+    page.getByRole("button", { name: /Garment blurry/ }),
   ).toBeVisible();
 });
 
