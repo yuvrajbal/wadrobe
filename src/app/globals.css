@@ -1,10 +1,48 @@
 @import "tailwindcss";
 
+/* The `.dark` class is set on <html> by the script in src/lib/theme.ts. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* Semantic colours. `ink` is for text, hairlines, and tints, so it flips with
+   the theme; `brand` is a filled surface that always carries white text. Use
+   literal palette colours only on backgrounds that never change, such as
+   scrims over photos or controls inside a `brand` panel. */
+@theme inline {
+  --color-canvas: var(--background);
+  --color-surface: var(--surface);
+  --color-sheet: var(--sheet);
+  --color-card: var(--card);
+  --color-ink: var(--ink);
+  --color-brand: var(--brand);
+}
+
 :root {
+  color-scheme: light;
   --background: #f3f0e8;
   --foreground: #16352b;
   --surface: #fbfaf6;
+  --sheet: #f7f5ef;
+  --card: #ffffff;
+  --ink: oklch(26.2% 0.051 172.552);
+  --brand: oklch(26.2% 0.051 172.552);
   --accent: #c7623d;
+  --glow-sage: rgb(200 220 204 / 68%);
+  --glow-clay: rgb(238 204 180 / 28%);
+  --selection-text: #16352b;
+}
+
+.dark {
+  color-scheme: dark;
+  --background: #0f1714;
+  --foreground: #e8efe9;
+  --surface: #17211d;
+  --sheet: #141d19;
+  --card: #1e2a25;
+  --ink: #e8efe9;
+  --brand: #1a5443;
+  --glow-sage: rgb(52 110 86 / 22%);
+  --glow-clay: rgb(150 84 52 / 10%);
+  --selection-text: #e8efe9;
 }
 
 * {
@@ -20,16 +58,8 @@ body {
   min-height: 100vh;
   margin: 0;
   background:
-    radial-gradient(
-      circle at 5% -5%,
-      rgb(200 220 204 / 68%),
-      transparent 34rem
-    ),
-    radial-gradient(
-      circle at 92% 24%,
-      rgb(238 204 180 / 28%),
-      transparent 28rem
-    ),
+    radial-gradient(circle at 5% -5%, var(--glow-sage), transparent 34rem),
+    radial-gradient(circle at 92% 24%, var(--glow-clay), transparent 28rem),
     var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
@@ -45,7 +75,7 @@ h1,
 
 ::selection {
   background: rgb(199 98 61 / 22%);
-  color: #16352b;
+  color: var(--selection-text);
 }
 
 button,

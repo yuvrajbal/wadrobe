@@ -2,9 +2,14 @@
 
 import { Toaster } from "sonner";
 
+import { useTheme } from "@/components/use-theme";
+
 export function NotificationProvider() {
+  const { resolvedTheme } = useTheme();
+
   return (
     <Toaster
+      theme={resolvedTheme}
       closeButton
       richColors
       position="top-center"

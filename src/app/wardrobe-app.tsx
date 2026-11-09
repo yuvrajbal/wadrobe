@@ -64,7 +64,7 @@ type ItemDraft = {
 };
 
 const fieldClass =
-  "mt-2 w-full rounded-2xl border border-emerald-950/15 bg-white px-4 py-3 text-sm text-emerald-950 outline-none transition placeholder:text-emerald-950/35 focus:border-emerald-700 focus:ring-4 focus:ring-emerald-700/10";
+  "mt-2 w-full rounded-2xl border border-ink/15 bg-card px-4 py-3 text-sm text-ink outline-none transition placeholder:text-ink/35 focus:border-emerald-700 dark:focus:border-emerald-400 focus:ring-4 focus:ring-emerald-700/10 dark:focus:ring-emerald-400/10";
 
 async function responseError(response: Response, fallback: string) {
   const body = (await response.json().catch(() => null)) as {
@@ -292,7 +292,7 @@ export function WardrobeApp() {
   return (
     <main className="min-h-screen pb-28 md:pb-20">
       <div className="mx-auto w-full max-w-7xl px-5 pt-8 sm:px-8 sm:pt-12">
-        <section className="relative overflow-hidden rounded-[2rem] bg-emerald-950 px-6 py-8 text-white shadow-[0_35px_90px_-55px_rgba(6,78,59,0.9)] sm:px-10 sm:py-11 lg:px-12">
+        <section className="relative overflow-hidden rounded-[2rem] bg-brand px-6 py-8 text-white shadow-[0_35px_90px_-55px_rgba(6,78,59,0.9)] sm:px-10 sm:py-11 lg:px-12">
           <div className="pointer-events-none absolute -top-24 -right-20 h-72 w-72 rounded-full border-[3.5rem] border-white/[0.035]" />
           <div className="relative flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
             <div>
@@ -332,12 +332,12 @@ export function WardrobeApp() {
         </section>
 
         <section className="pt-8">
-          <div className="rounded-[1.6rem] border border-emerald-950/8 bg-white/58 p-3 shadow-[0_20px_55px_-45px_rgba(6,78,59,0.6)] backdrop-blur sm:p-4">
+          <div className="rounded-[1.6rem] border border-ink/8 bg-card/58 p-3 shadow-[0_20px_55px_-45px_rgba(6,78,59,0.6)] backdrop-blur sm:p-4">
             <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
               <label className="relative block lg:w-[18rem]">
                 <span className="sr-only">Search wardrobe</span>
                 <span
-                  className="pointer-events-none absolute top-1/2 left-4 -translate-y-1/2 text-lg text-emerald-950/38"
+                  className="pointer-events-none absolute top-1/2 left-4 -translate-y-1/2 text-lg text-ink/38"
                   aria-hidden="true"
                 >
                   ⌕
@@ -347,7 +347,7 @@ export function WardrobeApp() {
                   value={searchQuery}
                   onChange={(event) => setSearchQuery(event.target.value)}
                   placeholder="Search name, color, pattern…"
-                  className="min-h-11 w-full rounded-full border border-emerald-950/10 bg-[#fbfaf6] py-2.5 pr-4 pl-11 text-sm text-emerald-950 outline-none placeholder:text-emerald-950/35 focus:border-emerald-700/50 focus:ring-4 focus:ring-emerald-700/8"
+                  className="min-h-11 w-full rounded-full border border-ink/10 bg-surface py-2.5 pr-4 pl-11 text-sm text-ink outline-none placeholder:text-ink/35 focus:border-emerald-700/50 focus:ring-4 focus:ring-emerald-700/8 dark:focus:border-emerald-400/50 dark:focus:ring-emerald-400/8"
                 />
               </label>
 
@@ -363,8 +363,8 @@ export function WardrobeApp() {
                     onClick={() => setActiveCategory(category.value)}
                     className={`shrink-0 rounded-full px-3.5 py-2 text-[0.78rem] font-semibold transition ${
                       activeCategory === category.value
-                        ? "bg-emerald-950 text-white shadow-sm"
-                        : "text-emerald-950/52 hover:bg-white hover:text-emerald-950"
+                        ? "bg-brand text-white shadow-sm"
+                        : "text-ink/52 hover:bg-card hover:text-ink"
                     }`}
                   >
                     {category.label}
@@ -376,7 +376,7 @@ export function WardrobeApp() {
 
           <div className="mt-6 flex items-end justify-between gap-4 px-1">
             <div>
-              <h2 className="display-type text-2xl tracking-[-0.035em] text-emerald-950 sm:text-3xl">
+              <h2 className="display-type text-2xl tracking-[-0.035em] text-ink sm:text-3xl">
                 {activeCategory === "all"
                   ? "Your collection"
                   : categories.find(
@@ -384,7 +384,7 @@ export function WardrobeApp() {
                     )?.label}
               </h2>
               {loadState === "ready" && items.length > 0 ? (
-                <p className="mt-1 text-xs text-emerald-950/45 sm:text-sm">
+                <p className="mt-1 text-xs text-ink/45 sm:text-sm">
                   {visibleItems.length}{" "}
                   {visibleItems.length === 1 ? "piece" : "pieces"}
                   {activeCategory === "all"
@@ -393,7 +393,7 @@ export function WardrobeApp() {
                 </p>
               ) : null}
             </div>
-            <p className="hidden text-xs text-emerald-950/38 sm:block">
+            <p className="hidden text-xs text-ink/38 sm:block">
               Select an item to view and edit
             </p>
           </div>
@@ -417,17 +417,17 @@ export function WardrobeApp() {
           {loadState === "ready" &&
           items.length > 0 &&
           visibleItems.length === 0 ? (
-            <div className="mt-7 rounded-[2rem] border border-dashed border-emerald-950/18 bg-white/35 px-6 py-14 text-center">
-              <p className="display-type text-2xl tracking-[-0.03em] text-emerald-950">
+            <div className="mt-7 rounded-[2rem] border border-dashed border-ink/18 bg-card/35 px-6 py-14 text-center">
+              <p className="display-type text-2xl tracking-[-0.03em] text-ink">
                 Nothing matches “{searchQuery.trim()}”
               </p>
-              <p className="mt-2 text-sm text-emerald-950/50">
+              <p className="mt-2 text-sm text-ink/50">
                 Try a color, garment name, or pattern.
               </p>
               <button
                 type="button"
                 onClick={() => setSearchQuery("")}
-                className="mt-5 rounded-full border border-emerald-950/12 bg-white px-5 py-2.5 text-sm font-semibold text-emerald-950"
+                className="mt-5 rounded-full border border-ink/12 bg-card px-5 py-2.5 text-sm font-semibold text-ink"
               >
                 Clear search
               </button>
@@ -485,9 +485,9 @@ function ItemCard({
     <button
       type="button"
       onClick={onOpen}
-      className="group overflow-hidden rounded-[1.4rem] border border-emerald-950/8 bg-[#fbfaf6]/82 text-left shadow-[0_22px_60px_-48px_rgba(6,78,59,0.65)] transition duration-300 hover:-translate-y-1 hover:border-emerald-950/14 hover:bg-white hover:shadow-[0_30px_65px_-42px_rgba(6,78,59,0.68)] focus:outline-none focus-visible:ring-4 focus-visible:ring-emerald-700/20 sm:rounded-[1.75rem]"
+      className="group overflow-hidden rounded-[1.4rem] border border-ink/8 bg-surface/82 text-left shadow-[0_22px_60px_-48px_rgba(6,78,59,0.65)] transition duration-300 hover:-translate-y-1 hover:border-ink/14 hover:bg-card hover:shadow-[0_30px_65px_-42px_rgba(6,78,59,0.68)] focus:outline-none focus-visible:ring-4 focus-visible:ring-emerald-700/20 sm:rounded-[1.75rem] dark:focus-visible:ring-emerald-400/20"
     >
-      <div className="relative aspect-[4/5] overflow-hidden bg-emerald-950/5">
+      <div className="relative aspect-[4/5] overflow-hidden bg-ink/5">
         <Image
           src={item.imageUrl}
           unoptimized
@@ -510,17 +510,17 @@ function ItemCard({
         </span>
       </div>
       <div className="p-3.5 sm:p-5">
-        <p className="truncate font-semibold tracking-[-0.015em] text-emerald-950 sm:text-lg">
+        <p className="truncate font-semibold tracking-[-0.015em] text-ink sm:text-lg">
           {item.name}
         </p>
-        <p className="mt-1 text-xs text-emerald-950/50 capitalize sm:text-sm">
+        <p className="mt-1 text-xs text-ink/50 capitalize sm:text-sm">
           {item.category} · {item.pattern}
         </p>
         <div className="mt-3 flex flex-wrap gap-1.5">
           {item.colors.slice(0, 2).map((color) => (
             <span
               key={color}
-              className="rounded-full bg-emerald-950/5 px-2.5 py-1 text-[0.68rem] font-medium text-emerald-950/65 capitalize"
+              className="rounded-full bg-ink/5 px-2.5 py-1 text-[0.68rem] font-medium text-ink/65 capitalize"
             >
               {color}
             </span>
@@ -537,12 +537,12 @@ function WardrobeSkeleton() {
       {Array.from({ length: 4 }, (_, index) => (
         <div
           key={index}
-          className="overflow-hidden rounded-[1.4rem] border border-emerald-950/5 bg-white/45 sm:rounded-[1.75rem]"
+          className="overflow-hidden rounded-[1.4rem] border border-ink/5 bg-card/45 sm:rounded-[1.75rem]"
         >
-          <div className="aspect-[4/5] animate-pulse bg-emerald-950/8" />
+          <div className="aspect-[4/5] animate-pulse bg-ink/8" />
           <div className="space-y-2 p-4">
-            <div className="h-4 w-2/3 animate-pulse rounded bg-emerald-950/10" />
-            <div className="h-3 w-1/2 animate-pulse rounded bg-emerald-950/7" />
+            <div className="h-4 w-2/3 animate-pulse rounded bg-ink/10" />
+            <div className="h-3 w-1/2 animate-pulse rounded bg-ink/7" />
           </div>
         </div>
       ))}
@@ -558,17 +558,17 @@ function ErrorState({
   onRetry: () => void;
 }) {
   return (
-    <div className="mt-10 rounded-3xl border border-red-900/10 bg-red-50/70 p-8 text-center">
-      <p className="font-semibold text-red-950">
+    <div className="mt-10 rounded-3xl border border-red-900/10 bg-red-50/70 p-8 text-center dark:border-red-300/15 dark:bg-red-950/40">
+      <p className="font-semibold text-red-950 dark:text-red-100">
         We couldn’t open your wardrobe.
       </p>
-      <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-red-950/65">
+      <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-red-950/65 dark:text-red-100/65">
         {message}
       </p>
       <button
         type="button"
         onClick={onRetry}
-        className="mt-5 rounded-full bg-red-950 px-5 py-2.5 text-sm font-semibold text-white"
+        className="mt-5 rounded-full bg-red-950 px-5 py-2.5 text-sm font-semibold text-white dark:bg-red-800"
       >
         Try again
       </button>
@@ -586,14 +586,14 @@ function EmptyWardrobe({
   const filtered = category !== "all";
 
   return (
-    <div className="mt-10 rounded-[2rem] border border-dashed border-emerald-950/20 bg-white/35 px-6 py-16 text-center">
+    <div className="mt-10 rounded-[2rem] border border-dashed border-ink/20 bg-card/35 px-6 py-16 text-center">
       <div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-emerald-900 text-2xl text-white">
         ◇
       </div>
-      <h2 className="mt-5 text-2xl font-semibold tracking-[-0.03em] text-emerald-950">
+      <h2 className="mt-5 text-2xl font-semibold tracking-[-0.03em] text-ink">
         {filtered ? `No ${category} here yet` : "Your wardrobe starts here"}
       </h2>
-      <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-emerald-950/55">
+      <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-ink/55">
         {filtered
           ? "Try another category or add a new garment."
           : "Add a clear photo of one garment and Wadrobe will organize the details for you."}
@@ -602,7 +602,7 @@ function EmptyWardrobe({
         <button
           type="button"
           onClick={onReset}
-          className="mt-5 rounded-full border border-emerald-950/15 bg-white px-5 py-2.5 text-sm font-semibold text-emerald-950"
+          className="mt-5 rounded-full border border-ink/15 bg-card px-5 py-2.5 text-sm font-semibold text-ink"
         >
           View all items
         </button>
@@ -687,10 +687,10 @@ function DialogShell({
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        className="max-h-[94vh] min-h-0 w-full overflow-y-auto rounded-t-[2rem] bg-[#f7f5ef] shadow-2xl sm:max-w-3xl sm:rounded-[2rem]"
+        className="max-h-[94vh] min-h-0 w-full overflow-y-auto rounded-t-[2rem] bg-sheet shadow-2xl sm:max-w-3xl sm:rounded-[2rem]"
       >
-        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-emerald-950/10 bg-[#f7f5ef]/95 px-5 py-4 backdrop-blur sm:px-7">
-          <h2 className="text-lg font-semibold tracking-[-0.02em] text-emerald-950">
+        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-ink/10 bg-sheet/95 px-5 py-4 backdrop-blur sm:px-7">
+          <h2 className="text-lg font-semibold tracking-[-0.02em] text-ink">
             {title}
           </h2>
           <button
@@ -699,7 +699,7 @@ function DialogShell({
             aria-label="Close dialog"
             disabled={disabled}
             onClick={onClose}
-            className="grid h-10 w-10 place-items-center rounded-full border border-emerald-950/10 bg-white/60 text-xl text-emerald-950 transition hover:bg-white disabled:opacity-40"
+            className="grid h-10 w-10 place-items-center rounded-full border border-ink/10 bg-card/60 text-xl text-ink transition hover:bg-card disabled:opacity-40"
           >
             ×
           </button>
@@ -734,7 +734,7 @@ function UploadDialog({
       disabled={isUploading}
     >
       <div className="grid gap-6 p-5 sm:grid-cols-[0.9fr_1.1fr] sm:p-7">
-        <div className="relative aspect-[4/5] overflow-hidden rounded-3xl bg-emerald-950/5">
+        <div className="relative aspect-[4/5] overflow-hidden rounded-3xl bg-ink/5">
           {previewUrl ? (
             <Image
               src={previewUrl}
@@ -758,29 +758,29 @@ function UploadDialog({
         </div>
 
         <div className="flex flex-col justify-center">
-          <p className="text-xs font-semibold tracking-[0.15em] text-emerald-700 uppercase">
+          <p className="text-xs font-semibold tracking-[0.15em] text-emerald-700 uppercase dark:text-emerald-300">
             One item per photo
           </p>
-          <h3 className="mt-3 text-3xl font-semibold tracking-[-0.035em] text-emerald-950">
+          <h3 className="mt-3 text-3xl font-semibold tracking-[-0.035em] text-ink">
             Is the garment clear and centered?
           </h3>
-          <p className="mt-3 text-sm leading-6 text-emerald-950/60">
+          <p className="mt-3 text-sm leading-6 text-ink/60">
             Photos containing a full outfit are treated as one primary garment.
             You can correct every detail after analysis.
           </p>
-          <p className="mt-5 truncate rounded-2xl bg-white/70 px-4 py-3 text-xs text-emerald-950/55">
+          <p className="mt-5 truncate rounded-2xl bg-card/70 px-4 py-3 text-xs text-ink/55">
             {file.name}
           </p>
 
           {error ? (
-            <p className="mt-4 rounded-2xl bg-red-50 px-4 py-3 text-sm leading-5 text-red-900">
+            <p className="mt-4 rounded-2xl bg-red-50 px-4 py-3 text-sm leading-5 text-red-900 dark:bg-red-950/40 dark:text-red-200">
               {error}
             </p>
           ) : null}
 
           <div className="mt-6 flex gap-3">
             <label
-              className={`flex flex-1 items-center justify-center rounded-full border border-emerald-950/15 bg-white px-4 py-3 text-sm font-semibold text-emerald-950 ${
+              className={`flex flex-1 items-center justify-center rounded-full border border-ink/15 bg-card px-4 py-3 text-sm font-semibold text-ink ${
                 isUploading ? "cursor-not-allowed opacity-40" : "cursor-pointer"
               }`}
             >
@@ -797,7 +797,7 @@ function UploadDialog({
               type="button"
               disabled={isUploading}
               onClick={onUpload}
-              className="flex-1 rounded-full bg-emerald-950 px-4 py-3 text-sm font-semibold text-white disabled:opacity-60"
+              className="flex-1 rounded-full bg-brand px-4 py-3 text-sm font-semibold text-white disabled:opacity-60"
             >
               {isUploading ? "Analyzing…" : "Analyze item"}
             </button>
@@ -947,7 +947,7 @@ function ItemDialog({
       <form onSubmit={save}>
         <div className="grid gap-7 p-5 sm:grid-cols-[0.8fr_1.2fr] sm:p-7">
           <div>
-            <div className="relative aspect-[4/5] overflow-hidden rounded-3xl bg-emerald-950/5">
+            <div className="relative aspect-[4/5] overflow-hidden rounded-3xl bg-ink/5">
               <Image
                 src={item.imageUrl}
                 unoptimized
@@ -957,12 +957,12 @@ function ItemDialog({
                 className="object-cover"
               />
             </div>
-            <label className="mt-4 flex cursor-pointer items-center justify-between rounded-2xl border border-emerald-950/10 bg-white/65 px-4 py-3.5">
+            <label className="mt-4 flex cursor-pointer items-center justify-between rounded-2xl border border-ink/10 bg-card/65 px-4 py-3.5">
               <span>
-                <span className="block text-sm font-semibold text-emerald-950">
+                <span className="block text-sm font-semibold text-ink">
                   Available to wear
                 </span>
-                <span className="mt-0.5 block text-xs text-emerald-950/45">
+                <span className="mt-0.5 block text-xs text-ink/45">
                   Turn off for laundry or storage.
                 </span>
               </span>
@@ -972,13 +972,13 @@ function ItemDialog({
                 onChange={(event) =>
                   setField("available", event.target.checked)
                 }
-                className="h-5 w-5 accent-emerald-800"
+                className="h-5 w-5 accent-emerald-800 dark:accent-emerald-400"
               />
             </label>
           </div>
 
           <div className="grid content-start gap-5">
-            <label className="text-sm font-semibold text-emerald-950/75">
+            <label className="text-sm font-semibold text-ink/75">
               Name
               <input
                 className={fieldClass}
@@ -989,7 +989,7 @@ function ItemDialog({
             </label>
 
             <div className="grid grid-cols-2 gap-3">
-              <label className="text-sm font-semibold text-emerald-950/75">
+              <label className="text-sm font-semibold text-ink/75">
                 Category
                 <select
                   className={fieldClass}
@@ -1005,7 +1005,7 @@ function ItemDialog({
                   ))}
                 </select>
               </label>
-              <label className="text-sm font-semibold text-emerald-950/75">
+              <label className="text-sm font-semibold text-ink/75">
                 Formality
                 <select
                   className={fieldClass}
@@ -1023,7 +1023,7 @@ function ItemDialog({
               </label>
             </div>
 
-            <label className="text-sm font-semibold text-emerald-950/75">
+            <label className="text-sm font-semibold text-ink/75">
               Colors
               <input
                 className={fieldClass}
@@ -1031,13 +1031,13 @@ function ItemDialog({
                 placeholder="navy, white"
                 onChange={(event) => setField("colors", event.target.value)}
               />
-              <span className="mt-1.5 block text-xs font-normal text-emerald-950/40">
+              <span className="mt-1.5 block text-xs font-normal text-ink/40">
                 Separate colors with commas.
               </span>
             </label>
 
             <div className="grid grid-cols-2 gap-3">
-              <label className="text-sm font-semibold text-emerald-950/75">
+              <label className="text-sm font-semibold text-ink/75">
                 Pattern
                 <input
                   className={fieldClass}
@@ -1046,7 +1046,7 @@ function ItemDialog({
                   onChange={(event) => setField("pattern", event.target.value)}
                 />
               </label>
-              <label className="text-sm font-semibold text-emerald-950/75">
+              <label className="text-sm font-semibold text-ink/75">
                 Fit
                 <input
                   className={fieldClass}
@@ -1058,7 +1058,7 @@ function ItemDialog({
               </label>
             </div>
 
-            <label className="text-sm font-semibold text-emerald-950/75">
+            <label className="text-sm font-semibold text-ink/75">
               Material
               <input
                 className={fieldClass}
@@ -1070,7 +1070,7 @@ function ItemDialog({
             </label>
 
             <fieldset>
-              <legend className="text-sm font-semibold text-emerald-950/75">
+              <legend className="text-sm font-semibold text-ink/75">
                 Seasons
               </legend>
               <div className="mt-2 flex flex-wrap gap-2">
@@ -1085,7 +1085,7 @@ function ItemDialog({
                       className={`rounded-full px-3.5 py-2 text-xs font-semibold capitalize transition ${
                         active
                           ? "bg-emerald-900 text-white"
-                          : "border border-emerald-950/10 bg-white text-emerald-950/55"
+                          : "border border-ink/10 bg-card text-ink/55"
                       }`}
                     >
                       {season}
@@ -1095,7 +1095,7 @@ function ItemDialog({
               </div>
             </fieldset>
 
-            <label className="text-sm font-semibold text-emerald-950/75">
+            <label className="text-sm font-semibold text-ink/75">
               Notes
               <textarea
                 className={`${fieldClass} min-h-24 resize-y`}
@@ -1109,15 +1109,17 @@ function ItemDialog({
         </div>
 
         {error ? (
-          <p className="mx-5 mb-4 rounded-2xl bg-red-50 px-4 py-3 text-sm text-red-900 sm:mx-7">
+          <p className="mx-5 mb-4 rounded-2xl bg-red-50 px-4 py-3 text-sm text-red-900 sm:mx-7 dark:bg-red-950/40 dark:text-red-200">
             {error}
           </p>
         ) : null}
 
-        <div className="flex flex-col gap-3 border-t border-emerald-950/10 px-5 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-7">
+        <div className="flex flex-col gap-3 border-t border-ink/10 px-5 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-7">
           {confirmDelete ? (
             <div className="flex items-center gap-2">
-              <span className="text-xs text-red-900">Delete permanently?</span>
+              <span className="text-xs text-red-900 dark:text-red-200">
+                Delete permanently?
+              </span>
               <button
                 type="button"
                 disabled={disabled}
@@ -1130,7 +1132,7 @@ function ItemDialog({
                 type="button"
                 disabled={disabled}
                 onClick={() => setConfirmDelete(false)}
-                className="px-2 py-2 text-xs font-semibold text-emerald-950/55"
+                className="px-2 py-2 text-xs font-semibold text-ink/55"
               >
                 Cancel
               </button>
@@ -1140,7 +1142,7 @@ function ItemDialog({
               type="button"
               disabled={disabled}
               onClick={() => setConfirmDelete(true)}
-              className="self-start px-1 py-2 text-sm font-semibold text-red-800 disabled:opacity-40"
+              className="self-start px-1 py-2 text-sm font-semibold text-red-800 disabled:opacity-40 dark:text-red-300"
             >
               Delete item
             </button>
@@ -1151,14 +1153,14 @@ function ItemDialog({
               type="button"
               disabled={disabled}
               onClick={onClose}
-              className="flex-1 rounded-full border border-emerald-950/15 bg-white px-5 py-3 text-sm font-semibold text-emerald-950 disabled:opacity-40 sm:flex-none"
+              className="flex-1 rounded-full border border-ink/15 bg-card px-5 py-3 text-sm font-semibold text-ink disabled:opacity-40 sm:flex-none"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={disabled}
-              className="flex-1 rounded-full bg-emerald-950 px-6 py-3 text-sm font-semibold text-white disabled:opacity-60 sm:flex-none"
+              className="flex-1 rounded-full bg-brand px-6 py-3 text-sm font-semibold text-white disabled:opacity-60 sm:flex-none"
             >
               {isSaving ? "Saving…" : "Save changes"}
             </button>

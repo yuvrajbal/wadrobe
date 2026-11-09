@@ -54,15 +54,15 @@ export function SavedOutfits() {
   return (
     <main className="min-h-screen pb-28 md:pb-16">
       <div className="mx-auto w-full max-w-7xl px-5 py-10 sm:px-8 sm:py-14">
-        <section className="flex flex-col gap-7 border-b border-emerald-950/10 pb-9 sm:flex-row sm:items-end sm:justify-between">
+        <section className="flex flex-col gap-7 border-b border-ink/10 pb-9 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="text-xs font-semibold tracking-[0.18em] text-emerald-700 uppercase">
+            <p className="text-xs font-semibold tracking-[0.18em] text-emerald-700 uppercase dark:text-emerald-300">
               Saved outfits
             </p>
-            <h1 className="mt-3 text-4xl leading-none tracking-[-0.045em] text-emerald-950 sm:text-6xl">
+            <h1 className="mt-3 text-4xl leading-none tracking-[-0.045em] text-ink sm:text-6xl">
               Looks worth returning to.
             </h1>
-            <p className="mt-4 max-w-xl text-sm leading-6 text-emerald-950/58 sm:text-base">
+            <p className="mt-4 max-w-xl text-sm leading-6 text-ink/58 sm:text-base">
               Your personal rotation, all in one place. Reopen any look to make
               it work for a different day.
             </p>
@@ -80,19 +80,19 @@ export function SavedOutfits() {
             {Array.from({ length: 3 }, (_, index) => (
               <div
                 key={index}
-                className="h-80 animate-pulse rounded-[2rem] bg-emerald-950/8"
+                className="h-80 animate-pulse rounded-[2rem] bg-ink/8"
               />
             ))}
           </div>
         ) : null}
 
         {state === "error" ? (
-          <div className="mt-9 rounded-3xl bg-red-50 p-6 text-sm text-red-900">
+          <div className="mt-9 rounded-3xl bg-red-50 p-6 text-sm text-red-900 dark:bg-red-950/40 dark:text-red-200">
             <p>Saved outfits could not be loaded.</p>
             <button
               type="button"
               onClick={() => void load()}
-              className="mt-4 rounded-full bg-red-950 px-5 py-2.5 text-sm font-semibold text-white"
+              className="mt-4 rounded-full bg-red-950 px-5 py-2.5 text-sm font-semibold text-white dark:bg-red-800"
             >
               Try again
             </button>
@@ -100,16 +100,16 @@ export function SavedOutfits() {
         ) : null}
 
         {state === "ready" && outfits.length === 0 ? (
-          <div className="mt-9 rounded-[2rem] border border-dashed border-emerald-950/20 bg-white/40 px-6 py-14 text-center">
-            <h2 className="text-2xl font-semibold tracking-[-0.03em] text-emerald-950">
+          <div className="mt-9 rounded-[2rem] border border-dashed border-ink/20 bg-card/40 px-6 py-14 text-center">
+            <h2 className="text-2xl font-semibold tracking-[-0.03em] text-ink">
               No saved looks yet
             </h2>
-            <p className="mt-2 text-sm text-emerald-950/50">
+            <p className="mt-2 text-sm text-ink/50">
               Assemble your first look in the manual builder.
             </p>
             <Link
               href="/builder"
-              className="mt-5 inline-flex rounded-full bg-emerald-950 px-5 py-3 text-sm font-semibold text-white"
+              className="mt-5 inline-flex rounded-full bg-brand px-5 py-3 text-sm font-semibold text-white"
             >
               Build an outfit
             </Link>
@@ -120,15 +120,15 @@ export function SavedOutfits() {
           <section className="mt-8">
             <div className="mb-5 flex items-end justify-between px-1">
               <div>
-                <h2 className="display-type text-2xl tracking-[-0.035em] text-emerald-950 sm:text-3xl">
+                <h2 className="display-type text-2xl tracking-[-0.035em] text-ink sm:text-3xl">
                   Your rotation
                 </h2>
-                <p className="mt-1 text-xs text-emerald-950/45 sm:text-sm">
+                <p className="mt-1 text-xs text-ink/45 sm:text-sm">
                   {outfits.length} saved{" "}
                   {outfits.length === 1 ? "look" : "looks"}
                 </p>
               </div>
-              <p className="hidden text-xs text-emerald-950/38 sm:block">
+              <p className="hidden text-xs text-ink/38 sm:block">
                 Most recent first
               </p>
             </div>
@@ -143,13 +143,13 @@ export function SavedOutfits() {
                 return (
                   <article
                     key={outfit.id}
-                    className="group overflow-hidden rounded-[2rem] border border-emerald-950/8 bg-[#fbfaf6]/78 p-3.5 shadow-[0_25px_60px_-48px_rgba(6,78,59,0.65)] transition hover:-translate-y-1 hover:bg-white hover:shadow-[0_30px_65px_-44px_rgba(6,78,59,0.68)]"
+                    className="group overflow-hidden rounded-[2rem] border border-ink/8 bg-surface/78 p-3.5 shadow-[0_25px_60px_-48px_rgba(6,78,59,0.65)] transition hover:-translate-y-1 hover:bg-card hover:shadow-[0_30px_65px_-44px_rgba(6,78,59,0.68)]"
                   >
                     <div className="grid grid-cols-2 gap-2">
                       {outfitItems.slice(0, 4).map((item) => (
                         <div
                           key={item.id}
-                          className="relative aspect-square overflow-hidden rounded-2xl bg-emerald-950/5"
+                          className="relative aspect-square overflow-hidden rounded-2xl bg-ink/5"
                         >
                           <Image
                             src={item.imageUrl}
@@ -164,17 +164,17 @@ export function SavedOutfits() {
                     </div>
                     <div className="flex items-center justify-between gap-4 px-1 pt-4 pb-1">
                       <div>
-                        <p className="font-semibold tracking-[-0.015em] text-emerald-950">
+                        <p className="font-semibold tracking-[-0.015em] text-ink">
                           {outfitItems.length}-piece outfit
                         </p>
-                        <p className="mt-1 text-xs text-emerald-950/42">
+                        <p className="mt-1 text-xs text-ink/42">
                           Saved{" "}
                           {new Date(outfit.createdAt).toLocaleDateString()}
                         </p>
                       </div>
                       <Link
                         href={`/builder?${builderQuery}`}
-                        className="shrink-0 rounded-full border border-emerald-950/12 bg-white px-3.5 py-2 text-xs font-semibold text-emerald-950 transition hover:border-emerald-950/25"
+                        className="shrink-0 rounded-full border border-ink/12 bg-card px-3.5 py-2 text-xs font-semibold text-ink transition hover:border-ink/25"
                       >
                         Edit look
                       </Link>
