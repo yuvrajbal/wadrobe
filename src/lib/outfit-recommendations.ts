@@ -28,8 +28,11 @@ export class InsufficientWardrobeError extends Error {
 function compactItem(item: Item) {
   return {
     id: item.id,
+    name: item.name,
     category: item.category,
     colors: item.colors,
+    material: item.material,
+    fit: item.fit,
     pattern: item.pattern,
     formality: item.formality,
     season: item.season,
@@ -162,7 +165,7 @@ export async function recommendOutfits({
           {
             role: "system",
             content:
-              "Create three ranked, genuinely distinct, wearable outfits when the wardrobe allows it; otherwise return as many as are feasible. Use only supplied available item IDs. Every outfit must contain exactly one top, one bottom, and one pair of shoes, with at most one outerwear and one accessory. Rank priorities in this order: occasion and formality, temperature and season suitability, walking comfort, color and pattern harmony, then personalization. Treat preferred personalization signals positively and avoided signals negatively. Never exactly repeat a recent rejected outfit when another combination is possible. Vary core pieces, not only accessories, whenever inventory permits. Each rationale must name the practical reason the look fits this request without mentioning feedback. Return only the requested structure.",
+              "Create three ranked, genuinely distinct, wearable outfits when the wardrobe allows it; otherwise return as many as are feasible. Use only supplied available item IDs. Every outfit must contain exactly one top, one bottom, and one pair of shoes, with at most one outerwear and one accessory. Rank priorities in this order: occasion and formality, temperature and season suitability, walking comfort, color and pattern harmony, then personalization. Treat preferred personalization signals positively and avoided signals negatively. Never exactly repeat a recent rejected outfit when another combination is possible. Vary core pieces, not only accessories, whenever inventory permits. Judge every item by its name, material, and fit, not only its category label. Match the real-world dress code of the occasion: a style direction such as polished means elevated smart-casual for casual settings like errands, malls, or daytime outings, never tuxedo, suit, or formal-event pieces. Never pair tuxedo or suit separates for casual occasions, and do not treat a tailored blazer, suit jacket, or tuxedo jacket as cold-weather protection. Ensure real warmth for the temperature: around 50°F (10°C) or below, include a genuinely warm layer, such as a coat, insulated or lined jacket, or heavy knit with a jacket, and avoid short-sleeve or thin tops unless the outerwear is warm enough to cover for them; with high walking, favor comfortable, weather-appropriate shoes over stiff dress shoes. Check that layers physically work together: a slim, fitted, or tailored outerwear piece cannot go over a chunky, bulky, or oversized knit; pair bulky tops with roomy outerwear or none. Each rationale must name the practical reason the look fits this request without mentioning feedback. Return only the requested structure.",
           },
           ...(repairInstruction
             ? [

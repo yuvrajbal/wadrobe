@@ -62,7 +62,7 @@ On item upload, send **one** vision call. Prompt the model to return **only** JS
 
 ### Recommendation (per request)
 
-Send the user's **available** items as a compact JSON array of `{id, category, colors, pattern, formality, season}` plus the request context (occasion, temperature, walking level, style) plus a short summary of recent saved/rejected outfits. Instruct the model to return JSON: an array of up to 3 outfits, each a list of item IDs plus a one-line rationale. Map IDs back to images client-side.
+Send the user's **available** items as a compact JSON array of `{id, name, category, colors, pattern, formality, season, material, fit}` (never notes) plus the request context (occasion, temperature, walking level, style) plus a short summary of recent saved/rejected outfits. Instruct the model to return JSON: an array of up to 3 outfits, each a list of item IDs plus a one-line rationale. Map IDs back to images client-side.
 
 **Do not send images at recommendation time.**
 
