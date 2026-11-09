@@ -28,8 +28,9 @@ const item = {
   name: "navy oxford shirt",
 };
 
-function multipartRequest(withFile = true) {
+function multipartRequest(withFile = true, attributes?: string) {
   const formData = new FormData();
+  if (attributes !== undefined) formData.set("attributes", attributes);
 
   if (withFile) {
     formData.set(
@@ -61,7 +62,40 @@ describe("POST /api/items", () => {
     expect(routeMocks.ingestWardrobeItem).toHaveBeenCalledWith(
       expect.any(File),
       userId,
+      undefined,
     );
+  });
+
+  it("passes pre-analyzed attributes through to ingestion", async () => {
+    const attributes = {
+      name: "olive field jacket",
+      category: "outerwear",
+      colors: ["olive"],
+      pattern: "solid",
+      formality: 2,
+      season: ["fall"],
+      material: "cotton",
+      fit: "regular",
+    };
+
+    const response = await POST(
+      multipartRequest(true, JSON.stringify(attributes)),
+    );
+
+    expect(response.status).toBe(201);
+    expect(routeMocks.ingestWardrobeItem).toHaveBeenCalledWith(
+      expect.any(File),
+      userId,
+      attributes,
+    );
+  });
+
+  it("rejects malformed pre-analyzed attributes", async () => {
+    for (const attributes of ["not json", JSON.stringify({ name: "x" })]) {
+      const response = await POST(multipartRequest(true, attributes));
+      expect(response.status).toBe(400);
+    }
+    expect(routeMocks.ingestWardrobeItem).not.toHaveBeenCalled();
   });
 
   it("requires a multipart file field", async () => {

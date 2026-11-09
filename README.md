@@ -80,6 +80,10 @@ The vision response is an editable draft containing a name, category, colors,
 pattern, formality, seasons, material, and fit. The request uses Structured
 Outputs and explicitly sets `store: false`.
 
+An optional `attributes` field (JSON matching the vision schema) skips the
+vision call. The purchase check uses this when you add an item you just checked,
+so the same photo is not analyzed twice.
+
 ## Wardrobe item management
 
 - `GET /api/items` lists the current user's items. Optional filters are
@@ -145,6 +149,23 @@ Each suggestion can be:
 `GET /api/weather` validates browser coordinates and proxies only the current
 temperature from Open-Meteo. Weather failure never blocks suggestions because
 the temperature field remains manually editable.
+
+## Check before you buy
+
+Open `/shop`, photograph a garment you are considering, and optionally enter its
+price. `POST /api/purchase-checks` accepts multipart `file` and optional `price`
+fields. It analyzes the photo with the same vision step used for ingestion, then
+compares those attributes with the current user's whole wardrobe, including
+items marked unavailable. No images are sent in the comparison call, and nothing
+is stored.
+
+The response gives a buy/maybe/skip verdict, the owned items it pairs with
+(counted per category), an estimated number of top + bottom + shoes outfits it
+enables, up to three example outfits, owned items it would duplicate, gaps it
+fills, and an optional comment on price. Item IDs from the model are checked
+against the wardrobe, and example outfits that would not be wearable are
+dropped. The **I bought it** button creates the item from the same photo and
+attributes without a second vision call.
 
 ## Current milestone status
 
